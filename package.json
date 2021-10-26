@@ -1,0 +1,27 @@
+{
+  "name": "coin-voter-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svetoslav0/coin-voter-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/svetoslav0/coin-voter-server/issues"
+  },
+  "homepage": "https://github.com/svetoslav0/coin-voter-server#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "util": "^0.12.4"
+  },
+  "type": "module"
+}
