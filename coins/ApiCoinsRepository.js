@@ -1,6 +1,39 @@
 import { ApiRepository } from '../common/ApiRepository.js';
 
 class ApiCoinsRepository extends ApiRepository {
+    /**
+     * @param id
+     * @returns {Promise<null|*>}
+     */
+    async get_coin_by_id(id) {
+        const query = `
+            SELECT
+                id,
+                name,
+                description,
+                symbol,
+                launch_date,
+                owner,
+                is_approved
+            FROM
+                coins
+            WHERE
+                id = ?
+        `;
+
+        const result = await this._query(query, [id]);
+
+        if (result.length == 1) {
+            return result[0];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param symbol
+     * @returns {Promise<null|*>}
+     */
     async get_coin_by_symbol(symbol) {
         const query = `
             SELECT
@@ -24,6 +57,24 @@ class ApiCoinsRepository extends ApiRepository {
         }
 
         return null;
+    }
+
+    /**
+     * @param id
+     * @param status
+     * @returns {Promise<void>}
+     */
+    async update_status(id, status) {
+        const query = `
+            UPDATE
+                coins
+            SET
+                is_approved = ?
+            WHERE
+                id = ?
+        `;
+
+        await this._query(query, [status, id]);
     }
 }
 

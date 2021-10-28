@@ -68,6 +68,6 @@ app.use(function (err, req, res, next) {
 
     res.status(statusCode)
         .send({ error: errorMessage });
-})
+});
 
 app.listen(port, () => console.log(`Running on port ${port} . . .`))

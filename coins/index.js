@@ -13,6 +13,14 @@ router.post('/requestAddition', ApiMiddleware.is_user_ordinary, async (request, 
     }
 });
 
+router.post('/approve/:id', ApiMiddleware.is_user_admin, async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).approve());
+    } catch (e) {
+        next(e);
+    }
+});
+
 router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).vote());

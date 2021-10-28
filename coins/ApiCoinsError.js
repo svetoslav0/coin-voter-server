@@ -8,6 +8,10 @@ const ERRORS = {
     INVALID_DATE: {
         status: 400,
         message: 'launch_date field must be in format YYYY-MM-DD'
+    },
+    NON_EXISTING_COIN_ID: {
+        status: 404,
+        message: 'Coin with ID {ID} does not exist'
     }
 };
 

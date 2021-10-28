@@ -16,6 +16,17 @@ export class ApiCoinsController extends ApiController {
         await this._repository.coins.add_unapproved(name, description, symbol, launch_date, user_id);
     }
 
+    /**
+     * @returns {Promise<void>}
+     */
+    async approve() {
+        await this._validate_approve_params();
+        await this._repository.coins.update_status(this._request.params.id, 1);
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
     async vote() {
         const coin_id = this._request.params.id;
         const user_id = this._request.user_id;
@@ -49,6 +60,19 @@ export class ApiCoinsController extends ApiController {
 
         if (!moment(launch_date, 'YYYY-MM-DD').isValid()) {
             throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE);
+        }
+    }
+
+    /**
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _validate_approve_params() {
+        const id = this._request.params.id;
+        const coin = await this._repository.coins.get_coin_by_id(id);
+
+        if (!coin) {
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_ID, { ID: id });
         }
     }
 }
