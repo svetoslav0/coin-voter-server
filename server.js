@@ -12,7 +12,7 @@ import { DbFactory } from './common/database/DbFactory.js';
 
 import usersRepository from './common/repositories/ApiUsersRepository.js';
 
-const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).getConnection();
+const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).get_connection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
 
 const app = express();

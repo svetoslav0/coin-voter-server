@@ -27,6 +27,18 @@ const ERRORS = {
     INVALID_CREDENTIALS: {
         status: 400,
         message: 'Invalid username or password'
+    },
+    MISSING_TOKEN: {
+        status: 401,
+        message: 'Missing token query parameter'
+    },
+    INVALID_TOKEN: {
+        status: 401,
+        message: 'Invalid token'
+    },
+    UNAUTHORIZED: {
+        status: 401,
+        message: 'Unauthorized for this action'
     }
 }
 

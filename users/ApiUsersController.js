@@ -18,13 +18,13 @@ export class ApiUsersController extends ApiController {
         const { username, password } = this._query;
         await this._validate_login_params();
 
-        const user = await this._repository.user.getUserByUsername(username);
+        const user = await this._repository.user.get_user_by_username(username);
 
         const isPasswordValid = await bcrypt.compare(password, user ? user.password : null);
         if (user && isPasswordValid) {
             const payload = {
-                userId: user.id,
-                roleId: user.role_id
+                user_id: user.id,
+                role_id: user.role_id
             };
 
             const token = jwt.sign(payload, TOKEN_SECRET);
@@ -81,7 +81,7 @@ export class ApiUsersController extends ApiController {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'confirmPassword' });
         }
 
-        const user = await this._repository.user.getUserByUsername(username);
+        const user = await this._repository.user.get_user_by_username(username);
         if (user) {
             throw new ApiError(ApiError.ERRORS.USERNAME_ALREADY_TAKEN, { USERNAME: username });
         }

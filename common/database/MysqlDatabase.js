@@ -1,7 +1,7 @@
 import mysql from 'mysql';
 
 export class MysqlDatabase {
-    getConnection() {
+    get_connection() {
         const settings = {
             host: 'localhost',
             database: 'coiner',

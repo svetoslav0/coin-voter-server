@@ -25,7 +25,7 @@ class ApiUsersRepository {
         await this._query(query, [username, hash, USER_ROLE_ID]);
     }
 
-    async getUserByUsername(username) {
+    async get_user_by_username(username) {
         const query = `
             SELECT
                 id,
