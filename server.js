@@ -1,15 +1,16 @@
-import bodyParser from "body-parser";
+import bodyParser from 'body-parser';
 import express from 'express';
 import cors from 'cors';
 import Util from 'util';
 
 import { router } from './routes.js';
 import { DATABASES } from './common/config/DATABASES.js';
-import { Middleware } from './common/middleware.js';
+import { ApiMiddleware } from './common/ApiMiddleware.js';
+import { ApiError } from './common/ApiError.js';
 import { DbFactory } from './common/database/DbFactory.js';
 // TODO: import configuration
 
-import usersRepository from './common/repositories/Users.js';
+import usersRepository from './common/repositories/ApiUsersRepository.js';
 
 const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).getConnection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
@@ -23,8 +24,8 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
@@ -37,7 +38,7 @@ app.use(
      */
     async (request, response, next) => {
         try {
-            request.middleware = new Middleware(request, response);
+            request.middleware = new ApiMiddleware(request, response, next);
             request.repository = {
                 user: new usersRepository(queryFunc)
             };
@@ -50,5 +51,18 @@ app.use(
 
 app.use(router);
 
+app.use(function (err, req, res, next) {
+    const error = err instanceof ApiError
+        ? err.to_json().message
+        : err;
+
+    const statusCode = err.status || 500;
+    const errorMessage = Object.keys(error).length
+        ? error
+        : "Something went wrong . . .";
+
+    res.status(statusCode)
+        .send({ error: errorMessage });
+})
 
 app.listen(port, () => console.log(`Running on port ${port} . . .`))

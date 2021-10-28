@@ -1,7 +1,8 @@
-export class Middleware {
-    constructor(request, response) {
+export class ApiMiddleware {
+    constructor(request, response, next) {
         this._request = request;
         this._response = response;
+        this._next = next;
     }
 
     async authorize_user() {
