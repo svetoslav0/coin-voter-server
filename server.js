@@ -10,7 +10,8 @@ import { ApiError } from './common/ApiError.js';
 import { DbFactory } from './common/database/DbFactory.js';
 // TODO: import configuration
 
-import usersRepository from './common/repositories/ApiUsersRepository.js';
+import UsersRepository from './users/ApiUsersRepository.js';
+import CoinsRepository from './coins/ApiCoinsRepository.js';
 
 const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).get_connection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
@@ -40,7 +41,8 @@ app.use(
         try {
             request.middleware = new ApiMiddleware(request, response, next);
             request.repository = {
-                user: new usersRepository(queryFunc)
+                users: new UsersRepository(queryFunc),
+                coins: new CoinsRepository(queryFunc)
             };
             next();
         } catch (err) {
@@ -51,13 +53,14 @@ app.use(
 
 app.use(router);
 
+// TODO: Fix me!
 app.use(function (err, req, res, next) {
     const error = err instanceof ApiError
         ? err.to_json().message
         : err;
 
     const statusCode = err.status || 500;
-    const errorMessage = Object.keys(error).length
+    const errorMessage = Object.keys(error).length // incorrect, probably -> err instanceof ApiError
         ? error
         : "Something went wrong . . .";
 

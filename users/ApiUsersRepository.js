@@ -1,11 +1,9 @@
+import { ApiRepository } from '../common/ApiRepository.js';
+
 const USER_ROLE_ID = 1;
 const ADMIN_ROLE_ID = 2;
 
-class ApiUsersRepository {
-    constructor(queryFunc) {
-        this._query = queryFunc;
-    }
-
+class ApiUsersRepository extends ApiRepository {
     async getUserById(id) {
         // todo: reimplement this method
         return await this._query("select * from users");

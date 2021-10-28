@@ -18,7 +18,7 @@ export class ApiUsersController extends ApiController {
         const { username, password } = this._query;
         await this._validate_login_params();
 
-        const user = await this._repository.user.get_user_by_username(username);
+        const user = await this._repository.users.get_user_by_username(username);
 
         const isPasswordValid = await bcrypt.compare(password, user ? user.password : null);
         if (user && isPasswordValid) {
@@ -43,7 +43,7 @@ export class ApiUsersController extends ApiController {
         const salt = await bcrypt.genSalt(SALT_DIFFICULTY);
         const hash = await bcrypt.hash(this._query.password, salt);
 
-        await this._repository.user.add(this._query.username, hash);
+        await this._repository.users.add(this._query.username, hash);
     }
 
     /**
@@ -81,7 +81,7 @@ export class ApiUsersController extends ApiController {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'confirmPassword' });
         }
 
-        const user = await this._repository.user.get_user_by_username(username);
+        const user = await this._repository.users.get_user_by_username(username);
         if (user) {
             throw new ApiError(ApiError.ERRORS.USERNAME_ALREADY_TAKEN, { USERNAME: username });
         }
