@@ -20,7 +20,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<void>}
      */
     async approve() {
-        await this._validate_approve_params();
+        await this._validate_coin_id_param();
         await this._repository.coins.update_status(this._request.params.id, 1);
     }
 
@@ -28,10 +28,19 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<void>}
      */
     async vote() {
+        await this._validate_coin_id_param();
         const coin_id = this._request.params.id;
         const user_id = this._request.user_id;
 
-        console.log(coin_id);
+        const vote = await this._repository.votes.get_vote(user_id, coin_id);
+
+        // upvote
+        if (!vote) {
+            return await this._repository.votes.add(user_id, coin_id);
+        }
+
+        // unvote
+        return await this._repository.votes.remove(user_id, coin_id);
     }
 
     /**
@@ -67,7 +76,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<void>}
      * @private
      */
-    async _validate_approve_params() {
+    async _validate_coin_id_param() {
         const id = this._request.params.id;
         const coin = await this._repository.coins.get_coin_by_id(id);
 

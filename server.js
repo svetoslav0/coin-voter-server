@@ -12,6 +12,7 @@ import { DbFactory } from './common/database/DbFactory.js';
 
 import UsersRepository from './users/ApiUsersRepository.js';
 import CoinsRepository from './coins/ApiCoinsRepository.js';
+import VotesRepository from './votes/ApiVotesRepository.js';
 
 const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).get_connection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
@@ -42,7 +43,8 @@ app.use(
             request.middleware = new ApiMiddleware(request, response, next);
             request.repository = {
                 users: new UsersRepository(queryFunc),
-                coins: new CoinsRepository(queryFunc)
+                coins: new CoinsRepository(queryFunc),
+                votes: new VotesRepository(queryFunc)
             };
             next();
         } catch (err) {
