@@ -61,6 +61,8 @@ app.use(function (err, req, res, next) {
         ? error
         : "Something went wrong . . .";
 
+    console.error(err);
+
     res.status(statusCode)
         .send({ error: errorMessage });
 })

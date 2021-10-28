@@ -23,6 +23,7 @@
     "cors": "^2.8.5",
     "es6-template-string": "^1.2.0",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "mysql": "^2.18.1",
     "string-template": "^1.0.0",
     "util": "^0.12.4"

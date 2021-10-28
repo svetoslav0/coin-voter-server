@@ -30,6 +30,7 @@ class ApiUsersRepository {
             SELECT
                 id,
                 username,
+                password,
                 role_id
             FROM
                 users

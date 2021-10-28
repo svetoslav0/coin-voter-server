@@ -1,16 +1,42 @@
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken';
+
 import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 
+// TODO: move in config
 const MIN_USERNAME_LENGTH = 4;
 const MIN_PASSWORD_LENGTH = 4;
 const SALT_DIFFICULTY = 10;
+const TOKEN_SECRET = 'querty';
 
 export class ApiUsersController extends ApiController {
+    /**
+     * @returns {Promise<{token: (*)}>}
+     */
     async login() {
-        return await this._repository.user.getUserById(1);
+        const { username, password } = this._query;
+        await this._validate_login_params();
+
+        const user = await this._repository.user.getUserByUsername(username);
+
+        const isPasswordValid = await bcrypt.compare(password, user ? user.password : null);
+        if (user && isPasswordValid) {
+            const payload = {
+                userId: user.id,
+                roleId: user.role_id
+            };
+
+            const token = jwt.sign(payload, TOKEN_SECRET);
+            return { token };
+        }
+
+        throw new ApiError(ApiError.ERRORS.INVALID_CREDENTIALS);
     }
 
+    /**
+     * @returns {Promise<void>}
+     */
     async register() {
         await this._validate_register_params();
 
@@ -18,6 +44,22 @@ export class ApiUsersController extends ApiController {
         const hash = await bcrypt.hash(this._query.password, salt);
 
         await this._repository.user.add(this._query.username, hash);
+    }
+
+    /**
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _validate_login_params() {
+        const { username, password } = this._query;
+
+        if (!username) {
+            throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'username' });
+        }
+
+        if (!password) {
+            throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'password' });
+        }
     }
 
     /**

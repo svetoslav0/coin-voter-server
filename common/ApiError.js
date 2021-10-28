@@ -23,6 +23,10 @@ const ERRORS = {
     PASSWORD_MISMATCH: {
         status: 400,
         message: 'Passwords mismatch'
+    },
+    INVALID_CREDENTIALS: {
+        status: 400,
+        message: 'Invalid username or password'
     }
 }
 
