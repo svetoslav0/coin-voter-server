@@ -30,7 +30,7 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
-     * @returns {Promise<void>}
+     * @returns {Promise<{upvoted: boolean}>}
      */
     async vote() {
         await this._validate_coin_id_param();
@@ -39,13 +39,17 @@ export class ApiCoinsController extends ApiController {
 
         const vote = await this._repository.votes.get_vote(user_id, coin_id);
 
-        // upvote
         if (!vote) {
-            return await this._repository.votes.add(user_id, coin_id);
+            await this._repository.votes.add(user_id, coin_id);
+            return {
+                upvoted: true
+            };
         }
 
-        // unvote
-        return await this._repository.votes.remove(user_id, coin_id);
+        await this._repository.votes.remove(user_id, coin_id);
+        return {
+            upvoted: false
+        };
     }
 
     /**
