@@ -12,6 +12,10 @@ const ERRORS = {
     NON_EXISTING_COIN_ID: {
         status: 404,
         message: 'Coin with ID {ID} does not exist'
+    },
+    INVALID_COIN_ORDER: {
+        status: 400,
+        message: 'Invalid order, must be one these: {ORDER_LIST}'
     }
 };
 

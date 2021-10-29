@@ -104,6 +104,48 @@ class ApiCoinsRepository extends ApiRepository {
 
         await this._query(query, [status, id]);
     }
+
+    /**
+     * @param limit
+     * @param offset
+     * @param order
+     * @param ascendingOrder
+     * @returns {Promise<*>}
+     */
+    async search_approved_coins(limit, offset, order, ascendingOrder = false) {
+        const query = `
+            SELECT
+                n.id,
+                n.name,
+                n.symbol,
+                n.launch_date,
+                COUNT(n.id) AS votes
+            FROM (
+                SELECT
+                    c.id,
+                    c.name,
+                    c.symbol,
+                    c.launch_date
+                FROM
+                    coins AS c
+                INNER JOIN
+                    coin_votes AS v
+                ON
+                    c.id = v.coin_id
+                WHERE c.is_approved = 1
+            ) AS n
+            GROUP BY
+                n.id,
+                n.name,
+                n.symbol,
+                n.launch_date
+            ORDER BY
+                ${order} ${ascendingOrder ? 'ASC' : 'DESC'}
+            LIMIT ?, ?
+        `;
+
+        return this._query(query, [+offset, +limit]);
+    }
 }
 
 export default ApiCoinsRepository;

@@ -29,4 +29,12 @@ router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, respons
     }
 });
 
+router.get('/', async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).get_coins());
+    } catch (e) {
+        next(e);
+    }
+});
+
 export default router;

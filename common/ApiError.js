@@ -39,6 +39,14 @@ const ERRORS = {
     UNAUTHORIZED: {
         status: 401,
         message: 'Unauthorized for this action'
+    },
+    NON_NUMERIC_PARAM: {
+        status: 400,
+        message: '{FIELD} must be a number'
+    },
+    NEGATIVE_PARAM: {
+        status: 400,
+        message: '{FIELD} must not be a negative number'
     }
 }
 

@@ -3,6 +3,11 @@ import moment from 'moment';
 import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 import { ApiCoinsError } from './ApiCoinsError.js';
+import { COIN_ORDERS } from '../common/config/COIN_ORDERS.js';
+
+const DEFAULT_LIMIT = 20;
+const DEFAULT_OFFSET = 0;
+const DEFAULT_ORDER = COIN_ORDERS.ID;
 
 export class ApiCoinsController extends ApiController {
     /**
@@ -44,6 +49,18 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
+     * @returns {Promise<{coins: *}>}
+     */
+    async get_coins() {
+        await this._validate_get_coins_params();
+
+        const { limit, offset, order } = this._query;
+        const coins = await this._repository.coins.search_approved_coins(limit, offset, order);
+
+        return { coins };
+    }
+
+    /**
      * @returns {Promise<void>}
      * @private
      */
@@ -82,6 +99,55 @@ export class ApiCoinsController extends ApiController {
 
         if (!coin) {
             throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_ID, { ID: id });
+        }
+    }
+
+    /**
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _validate_get_coins_params() {
+        this._set_default_search_values();
+        const { limit, offset, order } = this._query;
+
+        if (isNaN(limit)) {
+            throw new ApiError(ApiError.ERRORS.NON_NUMERIC_PARAM, { FIELD: 'limit' });
+        }
+
+        if (isNaN(offset)) {
+            throw new ApiError(ApiError.ERRORS.NON_NUMERIC_PARAM, { FIELD: 'offset' });
+        }
+
+        if (limit < 0) {
+            throw new ApiError(ApiError.ERRORS.NEGATIVE_PARAM, { FIELD: 'limit' });
+        }
+
+        if (offset < 0) {
+            throw new ApiError(ApiError.ERRORS.NEGATIVE_PARAM, { FIELD: 'offset' });
+        }
+
+        if (!Object.values(COIN_ORDERS).includes(order.toLowerCase())) {
+            const order_list = Object.values(COIN_ORDERS).join(', ');
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
+        }
+    }
+
+    /**
+     * @private
+     */
+    _set_default_search_values() {
+        const { limit, offset, order } = this._query;
+
+        if (!limit) {
+            this._query.limit = DEFAULT_LIMIT;
+        }
+
+        if (!offset) {
+            this._query.offset = DEFAULT_OFFSET;
+        }
+
+        if (!order) {
+            this._query.order = DEFAULT_ORDER;
         }
     }
 }
