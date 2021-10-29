@@ -51,7 +51,7 @@ export class ApiCoinsController extends ApiController {
     /**
      * @returns {Promise<{coins: *}>}
      */
-    async get_coins() {
+    async get_approved_coins() {
         await this._validate_get_coins_params();
 
         const { limit, offset, order } = this._query;

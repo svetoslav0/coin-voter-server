@@ -29,9 +29,9 @@ router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, respons
     }
 });
 
-router.get('/', async (request, response, next) => {
+router.get('/approved', async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).get_coins());
+        return response.json(await new ApiCoinsController(request, response, next).get_approved_coins());
     } catch (e) {
         next(e);
     }
