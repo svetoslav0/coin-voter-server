@@ -20,7 +20,7 @@ export class ApiUsersController extends ApiController {
 
         const user = await this._repository.users.get_user_by_username(username);
 
-        const isPasswordValid = await bcrypt.compare(password, user ? user.password : null);
+        const isPasswordValid = await bcrypt.compare(password, user ? user.password : '');
         if (user && isPasswordValid) {
             const payload = {
                 user_id: user.id,
