@@ -37,4 +37,12 @@ router.get('/approved', ApiMiddleware.try_to_authorize_user, async (request, res
     }
 });
 
+router.get('/unapprovedCount', ApiMiddleware.is_user_admin, async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).get_upapproved_count())
+    } catch (e) {
+        next(e);
+    }
+});
+
 export default router;

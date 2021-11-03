@@ -66,6 +66,11 @@ export class ApiCoinsController extends ApiController {
         };
     }
 
+    async get_upapproved_count() {
+        const count = await this._repository.coins.get_unapproved_count();
+        return { count };
+    }
+
     /**
      * @returns {Promise<void>}
      * @private

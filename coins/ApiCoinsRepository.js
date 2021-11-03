@@ -171,6 +171,25 @@ class ApiCoinsRepository extends ApiRepository {
 
         return this._query(query, [user_id, coin_ids]);
     }
+
+    async get_unapproved_count() {
+        const query = `
+            SELECT
+                COUNT(*) AS count
+            FROM
+                coins
+            WHERE
+                is_approved = 0
+        `;
+
+        const result = await this._query(query);
+
+        if (result.length == 1) {
+            return result[0].count;
+        }
+
+        return null;
+    }
 }
 
 export default ApiCoinsRepository;
