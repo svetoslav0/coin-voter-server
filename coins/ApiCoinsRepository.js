@@ -119,13 +119,14 @@ class ApiCoinsRepository extends ApiRepository {
                 n.name,
                 n.symbol,
                 n.launch_date,
-                COUNT(n.id) AS votes
+                COUNT(n.coin_id) AS votes
             FROM (
                 SELECT
                     c.id,
                     c.name,
                     c.symbol,
-                    c.launch_date
+                    c.launch_date,
+                    v.coin_id
                 FROM
                     coins AS c
                 LEFT JOIN
