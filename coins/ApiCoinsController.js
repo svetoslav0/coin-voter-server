@@ -61,7 +61,9 @@ export class ApiCoinsController extends ApiController {
         const { limit, offset, order } = this._query;
         const coins = await this._repository.coins.search_approved_coins(limit, offset, order);
 
-        return { coins };
+        return {
+            coins: await this._attach_votes_for_user_for_each_coin(coins)
+        };
     }
 
     /**
@@ -153,5 +155,26 @@ export class ApiCoinsController extends ApiController {
         if (!order) {
             this._query.order = DEFAULT_ORDER;
         }
+    }
+
+    async _attach_votes_for_user_for_each_coin(coins) {
+        if (this._request.user_id && this._request.role_id) {
+            const ids = coins.map(c => c.id);
+
+            const voted_coin_ids = (await this._repository
+                .coins
+                .get_upvoted_coins_for_user(this._request.user_id, ids))
+                .map(x => x.id);
+
+            return coins.map(c => {
+                c.has_upvoted = !!voted_coin_ids.includes(c.id);
+                return c;
+            });
+        }
+
+        return coins.map(c => {
+            c.has_upvoted = false
+            return c;
+        });
     }
 }

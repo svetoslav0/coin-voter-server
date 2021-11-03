@@ -55,6 +55,26 @@ export class ApiMiddleware {
         next(new ApiError(ApiError.ERRORS.UNAUTHORIZED));
     }
 
+    static async try_to_authorize_user(request, response, next) {
+        const token = request.query.token;
+
+        if (!token) {
+            return next();
+        }
+
+        try {
+            const verified = jwt.verify(token, TOKEN_SECRET);
+            const { user_id, role_id } = verified;
+
+            request.user_id = user_id;
+            request.role_id = role_id;
+        } catch (err) {
+            console.log(ApiError.ERRORS.INVALID_TOKEN);
+        }
+
+        next();
+    }
+
     /**
      * @param request
      * @returns {Promise<*>}

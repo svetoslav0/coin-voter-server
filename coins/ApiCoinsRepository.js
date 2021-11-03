@@ -109,10 +109,10 @@ class ApiCoinsRepository extends ApiRepository {
      * @param limit
      * @param offset
      * @param order
-     * @param ascendingOrder
+     * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_approved_coins(limit, offset, order, ascendingOrder = false) {
+    async search_approved_coins(limit, offset, order, ascending_order = false) {
         const query = `
             SELECT
                 n.id,
@@ -128,7 +128,7 @@ class ApiCoinsRepository extends ApiRepository {
                     c.launch_date
                 FROM
                     coins AS c
-                INNER JOIN
+                LEFT JOIN
                     coin_votes AS v
                 ON
                     c.id = v.coin_id
@@ -140,11 +140,35 @@ class ApiCoinsRepository extends ApiRepository {
                 n.symbol,
                 n.launch_date
             ORDER BY
-                ${order} ${ascendingOrder ? 'ASC' : 'DESC'}
+                ${order} ${ascending_order ? 'ASC' : 'DESC'}
             LIMIT ?, ?
         `;
 
         return this._query(query, [+offset, +limit]);
+    }
+
+    /**
+     * @param {number} user_id
+     * @param {Array<number>} coin_ids
+     * @returns {Promise<*>}
+     */
+    async get_upvoted_coins_for_user(user_id, coin_ids) {
+        const query = `
+            SELECT
+                c.id
+            FROM
+                coins AS c
+            INNER JOIN
+                coin_votes AS v
+            ON
+                c.id = v.coin_id
+            WHERE
+                v.user_id = ?
+                    AND
+                c.id IN(?)
+        `;
+
+        return this._query(query, [user_id, coin_ids]);
     }
 }
 
