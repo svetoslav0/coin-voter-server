@@ -5,9 +5,9 @@ import { ApiCoinsController } from './ApiCoinsController.js';
 
 const router = express.Router();
 
-router.post('/requestAddition', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
+router.post('/', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).request());
+        return response.json(await new ApiCoinsController(request, response, next).add_coin());
     } catch (e) {
         next(e);
     }
@@ -29,9 +29,9 @@ router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, respons
     }
 });
 
-router.get('/approved', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
+router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).get_approved_coins());
+        return response.json(await new ApiCoinsController(request, response, next).search());
     } catch (e) {
         next(e);
     }

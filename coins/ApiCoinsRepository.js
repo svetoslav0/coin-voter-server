@@ -112,13 +112,14 @@ class ApiCoinsRepository extends ApiRepository {
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_approved_coins(limit, offset, order, ascending_order = false) {
+    async search_approved_coins(limit, offset, approved, order, ascending_order = false) {
         const query = `
             SELECT
                 n.id,
                 n.name,
                 n.symbol,
                 n.launch_date,
+                n.is_approved,
                 COUNT(n.coin_id) AS votes
             FROM (
                 SELECT
@@ -126,6 +127,7 @@ class ApiCoinsRepository extends ApiRepository {
                     c.name,
                     c.symbol,
                     c.launch_date,
+                    c.is_approved,
                     v.coin_id
                 FROM
                     coins AS c
@@ -133,13 +135,18 @@ class ApiCoinsRepository extends ApiRepository {
                     coin_votes AS v
                 ON
                     c.id = v.coin_id
-                WHERE c.is_approved = 1
+                ${approved !== undefined
+                    ? approved === 'true'
+                        ? 'WHERE c.is_approved = 1'
+                        : 'WHERE c.is_approved = 0'
+                    : ''}
             ) AS n
             GROUP BY
                 n.id,
                 n.name,
                 n.symbol,
-                n.launch_date
+                n.launch_date,
+                n.is_approved
             ORDER BY
                 ${order} ${ascending_order ? 'ASC' : 'DESC'}
             LIMIT ?, ?

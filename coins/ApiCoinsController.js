@@ -13,7 +13,7 @@ export class ApiCoinsController extends ApiController {
     /**
      * @returns {Promise<void>}
      */
-    async request() {
+    async add_coin() {
         const { name, description, symbol, launch_date } = this._query;
         await this._validate_request_addition_params();
 
@@ -55,17 +55,21 @@ export class ApiCoinsController extends ApiController {
     /**
      * @returns {Promise<{coins: *}>}
      */
-    async get_approved_coins() {
+    async search() {
         await this._validate_get_coins_params();
 
-        const { limit, offset, order } = this._query;
-        const coins = await this._repository.coins.search_approved_coins(limit, offset, order);
+        const { limit, offset, order, approved } = this._query;
+        const coins = await this._repository.coins.search_approved_coins(limit, offset, approved, order);
 
         return {
-            coins: await this._attach_votes_for_user_for_each_coin(coins)
+            coins: await this._parse_response(coins)
         };
     }
 
+    /**
+     *
+     * @returns {Promise<{count: *}>}
+     */
     async get_upapproved_count() {
         const count = await this._repository.coins.get_unapproved_count();
         return { count };
@@ -119,7 +123,7 @@ export class ApiCoinsController extends ApiController {
      */
     async _validate_get_coins_params() {
         this._set_default_search_values();
-        const { limit, offset, order } = this._query;
+        const { limit, offset, order, approved } = this._query;
 
         if (isNaN(limit)) {
             throw new ApiError(ApiError.ERRORS.NON_NUMERIC_PARAM, { FIELD: 'limit' });
@@ -140,6 +144,11 @@ export class ApiCoinsController extends ApiController {
         if (!Object.values(COIN_ORDERS).includes(order.toLowerCase())) {
             const order_list = Object.values(COIN_ORDERS).join(', ');
             throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
+        }
+
+        const approvedValue = approved?.toString().trim().toLowerCase();
+        if (approvedValue && approvedValue !== 'true' && approvedValue !== 'false') {
+            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'approved' });
         }
     }
 
@@ -162,6 +171,29 @@ export class ApiCoinsController extends ApiController {
         }
     }
 
+    /**
+     * @param coins
+     * @returns {Promise<*>}
+     * @private
+     */
+    async _parse_response(coins) {
+        coins = await this._attach_votes_for_user_for_each_coin(coins);
+        coins = this._parse_is_approved_filed(coins);
+        return coins;
+    }
+
+    _parse_is_approved_filed(coins) {
+        return coins.map(c => {
+            c.is_approved = c.is_approved == 1;
+            return c;
+        });
+    }
+
+    /**
+     * @param coins
+     * @returns {Promise<*>}
+     * @private
+     */
     async _attach_votes_for_user_for_each_coin(coins) {
         if (this._request.user_id && this._request.role_id) {
             const ids = coins.map(c => c.id);
@@ -178,7 +210,7 @@ export class ApiCoinsController extends ApiController {
         }
 
         return coins.map(c => {
-            c.has_upvoted = false
+            c.has_upvoted = false;
             return c;
         });
     }

@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import cors from 'cors';
+import morgan from 'morgan';
 import Util from 'util';
 
 import { router } from './routes.js';
@@ -31,6 +32,8 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
+
+app.use(morgan('dev'));
 
 app.use(
     /**

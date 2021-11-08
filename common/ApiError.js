@@ -47,6 +47,10 @@ const ERRORS = {
     NEGATIVE_PARAM: {
         status: 400,
         message: '{FIELD} must not be a negative number'
+    },
+    INVALID_BOOLEAN_PARAM: {
+        status: 400,
+        message: '{FIELD} must be boolean'
     }
 }
 
