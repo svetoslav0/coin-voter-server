@@ -2,11 +2,8 @@ import jwt from 'jsonwebtoken';
 
 import { ApiError } from './ApiError.js';
 
-
-// TODO: move in config
-const TOKEN_SECRET = 'querty';
-const USER_ROLE_ID = 1;
-const ADMIN_ROLE_ID = 2;
+import { config } from './config/config.js';
+import { CONSTANTS } from './config/CONSTANTS.js';
 
 export class ApiMiddleware {
     constructor(request, response, next) {
@@ -28,7 +25,7 @@ export class ApiMiddleware {
             return next(err);
         }
 
-        if (request.role_id >= USER_ROLE_ID) {
+        if (request.role_id >= CONSTANTS.USER_ROLES.USER_ROLE_ID) {
             return next();
         }
 
@@ -48,7 +45,7 @@ export class ApiMiddleware {
             return next(err);
         }
 
-        if (request.role_id >= ADMIN_ROLE_ID) {
+        if (request.role_id >= CONSTANTS.USER_ROLES.ADMIN_ROLE_ID) {
             return next();
         }
 
@@ -63,7 +60,7 @@ export class ApiMiddleware {
         }
 
         try {
-            const verified = jwt.verify(token, TOKEN_SECRET);
+            const verified = jwt.verify(token, config.auth.token_secret);
             const { user_id, role_id } = verified;
 
             request.user_id = user_id;
@@ -88,7 +85,7 @@ export class ApiMiddleware {
         }
 
         try {
-            const verified = jwt.verify(token, TOKEN_SECRET);
+            const verified = jwt.verify(token, config.auth.token_secret);
             const { user_id, role_id } = verified;
 
             request.user_id = user_id;

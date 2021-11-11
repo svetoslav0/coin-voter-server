@@ -5,21 +5,22 @@ import morgan from 'morgan';
 import Util from 'util';
 
 import { router } from './routes.js';
-import { DATABASES } from './common/config/DATABASES.js';
 import { ApiMiddleware } from './common/ApiMiddleware.js';
 import { ApiError } from './common/ApiError.js';
 import { DbFactory } from './common/database/DbFactory.js';
-// TODO: import configuration
+
+import { config } from './common/config/config.js';
+import { CONSTANTS } from './common/config/CONSTANTS.js';
 
 import UsersRepository from './users/ApiUsersRepository.js';
 import CoinsRepository from './coins/ApiCoinsRepository.js';
 import VotesRepository from './votes/ApiVotesRepository.js';
 
-const dbConnection = (new DbFactory()).create(DATABASES.MYSQL).get_connection();
+const dbConnection = (new DbFactory()).create(CONSTANTS.DB_DRIVERS.MYSQL).get_connection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
 
 const app = express();
-const port = 8090; // TODO: Move in configuration
+const port = config.server_port;
 
 app.use(cors());
 app.use(bodyParser.urlencoded({
@@ -68,7 +69,7 @@ app.use(function (err, req, res, next) {
     const statusCode = err.status || 500;
     const errorMessage = Object.keys(error).length // incorrect, probably -> err instanceof ApiError
         ? error
-        : "Something went wrong . . .";
+        : 'Something went wrong . . .';
 
     console.error(err);
 

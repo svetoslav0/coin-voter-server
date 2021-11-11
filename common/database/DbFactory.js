@@ -1,10 +1,10 @@
-import { DATABASES } from '../config/DATABASES.js';
 import { MysqlDatabase } from './MysqlDatabase.js';
+import { CONSTANTS } from '../config/CONSTANTS.js';
 
 export class DbFactory {
     create(type) {
         switch (type) {
-            case DATABASES.MYSQL:
+            case CONSTANTS.DB_DRIVERS.MYSQL:
                 return new MysqlDatabase();
             default:
                 throw new Error(`Invalid database driver: ${type}`);

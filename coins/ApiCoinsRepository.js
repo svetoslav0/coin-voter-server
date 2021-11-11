@@ -67,7 +67,7 @@ class ApiCoinsRepository extends ApiRepository {
      * @param user_id
      * @returns {Promise<void>}
      */
-    async add_unapproved(name, description, symbol, launch_date, user_id) {
+    async add(name, description, symbol, launch_date, user_id, is_approved) {
         const query = `
             INSERT INTO
                 coins (
@@ -83,7 +83,7 @@ class ApiCoinsRepository extends ApiRepository {
 
         await this._query(
             query,
-            [name, description, symbol, launch_date, user_id, 0]
+            [name, description, symbol, launch_date, user_id, is_approved ? 1 : 0]
         );
     }
 

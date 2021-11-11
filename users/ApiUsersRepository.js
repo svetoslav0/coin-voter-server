@@ -1,12 +1,11 @@
 import { ApiRepository } from '../common/ApiRepository.js';
 
-const USER_ROLE_ID = 1;
-const ADMIN_ROLE_ID = 2;
+import { CONSTANTS } from '../common/config/CONSTANTS.js';
 
 class ApiUsersRepository extends ApiRepository {
     async getUserById(id) {
         // todo: reimplement this method
-        return await this._query("select * from users");
+        return await this._query('select * from users');
     }
 
     async add(username, hash) {
@@ -20,7 +19,7 @@ class ApiUsersRepository extends ApiRepository {
             VALUES (?, ?, ?)
         `;
 
-        await this._query(query, [username, hash, USER_ROLE_ID]);
+        await this._query(query, [username, hash, CONSTANTS.USER_ROLES.USER_ROLE_ID]);
     }
 
     async get_user_by_username(username) {

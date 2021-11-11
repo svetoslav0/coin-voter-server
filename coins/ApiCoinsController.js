@@ -3,22 +3,25 @@ import moment from 'moment';
 import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 import { ApiCoinsError } from './ApiCoinsError.js';
-import { COIN_ORDERS } from '../common/config/COIN_ORDERS.js';
+import { CONSTANTS } from '../common/config/CONSTANTS.js';
 
-const DEFAULT_LIMIT = 20;
-const DEFAULT_OFFSET = 0;
-const DEFAULT_ORDER = COIN_ORDERS.ID;
+const DEFAULT_ORDER = CONSTANTS.COIN_ORDERS.ID;
 
 export class ApiCoinsController extends ApiController {
     /**
-     * @returns {Promise<void>}
+     * @returns {Promise<{added: boolean}>}
      */
     async add_coin() {
         const { name, description, symbol, launch_date } = this._query;
         await this._validate_request_addition_params();
 
         const user_id = this._request.user_id;
-        await this._repository.coins.add_unapproved(name, description, symbol, launch_date, user_id);
+        const role_id = this._request.role_id;
+        await this._repository.coins.add(
+            name, description, symbol, launch_date, user_id, role_id == CONSTANTS.USER_ROLES.ADMIN_ROLE_ID
+        );
+
+        return { added: true };
     }
 
     /**
@@ -99,7 +102,7 @@ export class ApiCoinsController extends ApiController {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'launch_date' });
         }
 
-        if (!moment(launch_date, 'YYYY-MM-DD').isValid()) {
+        if (!moment(launch_date, 'YYYY-MM-DD', true).isValid()) {
             throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE);
         }
     }
@@ -141,8 +144,8 @@ export class ApiCoinsController extends ApiController {
             throw new ApiError(ApiError.ERRORS.NEGATIVE_PARAM, { FIELD: 'offset' });
         }
 
-        if (!Object.values(COIN_ORDERS).includes(order.toLowerCase())) {
-            const order_list = Object.values(COIN_ORDERS).join(', ');
+        if (!Object.values(CONSTANTS.COIN_ORDERS).includes(order.toLowerCase())) {
+            const order_list = Object.values(CONSTANTS.COIN_ORDERS).join(', ');
             throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
         }
 
@@ -159,11 +162,11 @@ export class ApiCoinsController extends ApiController {
         const { limit, offset, order } = this._query;
 
         if (!limit) {
-            this._query.limit = DEFAULT_LIMIT;
+            this._query.limit = CONSTANTS.RESTRICTIONS.DEFAULT_SEARCH_LIMIT;
         }
 
         if (!offset) {
-            this._query.offset = DEFAULT_OFFSET;
+            this._query.offset = CONSTANTS.RESTRICTIONS.DEFAULT_SEARCH_OFFSET;
         }
 
         if (!order) {

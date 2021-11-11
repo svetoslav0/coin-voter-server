@@ -4,11 +4,8 @@ import jwt from 'jsonwebtoken';
 import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 
-// TODO: move in config
-const MIN_USERNAME_LENGTH = 4;
-const MIN_PASSWORD_LENGTH = 4;
-const SALT_DIFFICULTY = 10;
-const TOKEN_SECRET = 'querty';
+import { config } from '../common/config/config.js';
+import { CONSTANTS } from '../common/config/CONSTANTS.js';
 
 export class ApiUsersController extends ApiController {
     /**
@@ -27,7 +24,7 @@ export class ApiUsersController extends ApiController {
                 role_id: user.role_id
             };
 
-            const token = jwt.sign(payload, TOKEN_SECRET);
+            const token = jwt.sign(payload, config.auth.token_secret);
             return { token };
         }
 
@@ -40,7 +37,7 @@ export class ApiUsersController extends ApiController {
     async register() {
         await this._validate_register_params();
 
-        const salt = await bcrypt.genSalt(SALT_DIFFICULTY);
+        const salt = await bcrypt.genSalt(config.auth.salt_difficulty);
         const hash = await bcrypt.hash(this._query.password, salt);
 
         await this._repository.users.add(this._query.username, hash);
@@ -86,17 +83,17 @@ export class ApiUsersController extends ApiController {
             throw new ApiError(ApiError.ERRORS.USERNAME_ALREADY_TAKEN, { USERNAME: username });
         }
 
-        if (username.length < MIN_USERNAME_LENGTH) {
+        if (username.length < CONSTANTS.RESTRICTIONS.MIN_USERNAME_LENGTH) {
             throw new ApiError(ApiError.ERRORS.FIELD_MIN_LENGTH, {
                 FIELD: 'username',
-                LENGTH: MIN_USERNAME_LENGTH
+                LENGTH: CONSTANTS.RESTRICTIONS.MIN_USERNAME_LENGTH
             });
         }
 
-        if (password.length < MIN_PASSWORD_LENGTH) {
+        if (password.length < CONSTANTS.RESTRICTIONS.MIN_PASSWORD_LENGTH) {
             throw new ApiError(ApiError.ERRORS.FIELD_MIN_LENGTH, {
                 FIELD: 'password',
-                LENGTH: MIN_PASSWORD_LENGTH
+                LENGTH: CONSTANTS.RESTRICTIONS.MIN_PASSWORD_LENGTH
             });
         }
 
