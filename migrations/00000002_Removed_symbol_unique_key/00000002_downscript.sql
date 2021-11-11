@@ -1,0 +1,2 @@
+ALTER TABLE coins
+ADD CONSTRAINT symbol UNIQUE KEY(symbol);

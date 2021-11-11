@@ -93,11 +93,6 @@ export class ApiCoinsController extends ApiController {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'symbol' });
         }
 
-        const coin = await this._repository.coins.get_coin_by_symbol(symbol);
-        if (coin) {
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.SYMBOL_EXISTS);
-        }
-
         if (!launch_date) {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'launch_date' });
         }
