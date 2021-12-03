@@ -71,7 +71,6 @@ export class ApiError extends Error {
         return error;
     }
 
-
     constructor(error, error_data) {
         super(error.message);
         this._error = Object.assign({}, error);

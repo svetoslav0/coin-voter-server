@@ -60,14 +60,12 @@ class ApiCoinsRepository extends ApiRepository {
     }
 
     /**
-     * @param name
-     * @param description
-     * @param symbol
-     * @param launch_date
-     * @param user_id
+     * @param {ApiCoin} coin
+     * @param {number} user_id
+     * @param {boolean} is_approved
      * @returns {Promise<void>}
      */
-    async add(name, description, symbol, launch_date, user_id, is_approved) {
+    async add(coin, user_id, is_approved) {
         const query = `
             INSERT INTO
                 coins (
@@ -76,14 +74,52 @@ class ApiCoinsRepository extends ApiRepository {
                     symbol,
                     launch_date,
                     owner,
-                    is_approved
+                    is_approved,
+                    logo_url,
+                    price,
+                    market_cap,
+                    is_presale,
+                    website,
+                    telegram,
+                    twitter,
+                    contract_address
                 )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
         `;
 
         await this._query(
             query,
-            [name, description, symbol, launch_date, user_id, is_approved ? 1 : 0]
+            [
+                coin.name,
+                coin.description,
+                coin.symbol,
+                coin.launch_date,
+                user_id,
+                is_approved ? 1 : 0,
+                coin.logo_url,
+                coin.price || null,
+                coin.market_cap || null,
+                coin.is_presale ? 1 : 0,
+                coin.website,
+                coin.telegram || null,
+                coin.twitter || null,
+                coin.contract_address || null
+            ]
         );
     }
 

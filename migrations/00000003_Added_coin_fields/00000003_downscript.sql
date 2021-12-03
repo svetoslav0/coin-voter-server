@@ -1,0 +1,10 @@
+ALTER TABLE coins
+DROP COLUMN date_added,
+DROP COLUMN logo_url,
+DROP COLUMN price,
+DROP COLUMN market_cap,
+DROP COLUMN is_presale,
+DROP COLUMN website,
+DROP COLUMN telegram,
+DROP COLUMN twitter,
+DROP COLUMN contract_address;

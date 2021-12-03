@@ -12,13 +12,13 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<{added: boolean}>}
      */
     async add_coin() {
-        const { name, description, symbol, launch_date } = this._query;
         await this._validate_request_addition_params();
 
         const user_id = this._request.user_id;
         const role_id = this._request.role_id;
+        const coin = this._get_coin_from_query();
         await this._repository.coins.add(
-            name, description, symbol, launch_date, user_id, role_id == CONSTANTS.USER_ROLES.ADMIN_ROLE_ID
+            coin, user_id, role_id == CONSTANTS.USER_ROLES.ADMIN_ROLE_ID
         );
 
         return { added: true };
@@ -70,7 +70,8 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
-     *
+     * TODO: Remove!
+     * @deprecated
      * @returns {Promise<{count: *}>}
      */
     async get_upapproved_count() {
@@ -83,7 +84,7 @@ export class ApiCoinsController extends ApiController {
      * @private
      */
     async _validate_request_addition_params() {
-        const { name, symbol, launch_date } = this._query;
+        const { name, symbol, launch_date, website } = this._query;
 
         if (!name) {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'name' });
@@ -100,6 +101,35 @@ export class ApiCoinsController extends ApiController {
         if (!moment(launch_date, 'YYYY-MM-DD', true).isValid()) {
             throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE);
         }
+
+        if (!website) {
+            throw new ApiCoinsError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'website' });
+        }
+
+        // TODO: Validate price and market cap
+
+        // TODO: validate and parse is_presale
+    }
+
+    /**
+     * @returns {ApiCoin}
+     * @private
+     */
+    _get_coin_from_query() {
+        return {
+            name: this._query.name,
+            description: this._query.description,
+            symbol: this._query.symbol,
+            launch_date: this._query.launch_date,
+            logo_url: this._query.logo_url,
+            price: this._query.price,
+            market_cap: this._query.market_cap,
+            is_presale: this._query.is_presale === 'true',
+            website: this._query.website,
+            telegram: this._query.telegram,
+            twitter: this._query.twitter,
+            contract_address: this._query.contract_address
+        };
     }
 
     /**
