@@ -1,0 +1,272 @@
+{
+	"info": {
+		"_postman_id": "7aaeb63f-c8fd-476f-8886-7b236066c052",
+		"name": "CoinVoter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET /users/login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "confirmPassword",
+							"value": "admin",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8090/users/login",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"users",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /users/register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "confirmPassword",
+							"value": "admin",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8090/users/register",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"users",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /coins",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8090/coins?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU5Njc1MzZ9.SmEGx8v1adYHzJRYiWI8NTmy5y_ofNPwLHQJJhVO3yk&order=votes",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"coins"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU5Njc1MzZ9.SmEGx8v1adYHzJRYiWI8NTmy5y_ofNPwLHQJJhVO3yk"
+						},
+						{
+							"key": "order",
+							"value": "votes"
+						},
+						{
+							"key": "approved",
+							"value": "true",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /coins",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "EliteDoggo-5",
+							"type": "text"
+						},
+						{
+							"key": "symbol",
+							"value": "ELITE-5",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "Some Elite Description",
+							"type": "text"
+						},
+						{
+							"key": "launch_date",
+							"value": "2001-03-03",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8090/coins?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJyb2xlX2lkIjoxLCJpYXQiOjE2MzYzNzI1MTh9.N-Df-xT0fm-XlA68c8REhK-TuIU_AQoFvhbhdxRlEyY",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"coins"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJyb2xlX2lkIjoxLCJpYXQiOjE2MzYzNzI1MTh9.N-Df-xT0fm-XlA68c8REhK-TuIU_AQoFvhbhdxRlEyY"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /coins/approve/:id",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "testName",
+							"type": "text"
+						},
+						{
+							"key": "symbol",
+							"value": "testSymbol2",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "Some Description",
+							"type": "text"
+						},
+						{
+							"key": "launch_date",
+							"value": "1111-11-11",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8090/coins/approve/2?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU0NTUyODd9.c39qT0E90QiwBhFOKPML4PylBn-_l-OIBfJWDr6LaM0",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"coins",
+						"approve",
+						"2"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU0NTUyODd9.c39qT0E90QiwBhFOKPML4PylBn-_l-OIBfJWDr6LaM0"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /coins/vote/:id",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "testName",
+							"type": "text"
+						},
+						{
+							"key": "symbol",
+							"value": "testSymbol2",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "Some Description",
+							"type": "text"
+						},
+						{
+							"key": "launch_date",
+							"value": "1111-11-11",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8090/coins/vote/2?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU5Njc3Nzl9.sSBWV0GF3lPPn_ES-HXKVATR0dkFKPnNRVLkr9Xw3ck",
+					"host": [
+						"localhost"
+					],
+					"port": "8090",
+					"path": [
+						"coins",
+						"vote",
+						"2"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlX2lkIjoyLCJpYXQiOjE2MzU5Njc3Nzl9.sSBWV0GF3lPPn_ES-HXKVATR0dkFKPnNRVLkr9Xw3ck"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
