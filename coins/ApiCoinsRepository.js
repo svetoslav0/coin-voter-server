@@ -14,7 +14,16 @@ class ApiCoinsRepository extends ApiRepository {
                 symbol,
                 launch_date,
                 owner,
-                is_approved
+                is_approved,
+                date_added,
+                logo_url,
+                FORMAT(price, 16) AS price,
+                FORMAT(market_cap, 4) AS market_cap,
+                is_presale,
+                website,
+                telegram,
+                twitter,
+                contract_address
             FROM
                 coins
             WHERE
@@ -148,7 +157,7 @@ class ApiCoinsRepository extends ApiRepository {
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_approved_coins(limit, offset, approved, order, ascending_order = false) {
+    async search_coins(limit, offset, approved, order, ascending_order = false) {
         const query = `
             SELECT
                 n.id,

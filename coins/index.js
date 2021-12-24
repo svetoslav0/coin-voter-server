@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {request, response} from 'express';
 
 import { ApiMiddleware } from '../common/ApiMiddleware.js';
 import { ApiCoinsController } from './ApiCoinsController.js';
@@ -39,7 +39,15 @@ router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, n
 
 router.get('/unapprovedCount', ApiMiddleware.is_user_admin, async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).get_upapproved_count())
+        return response.json(await new ApiCoinsController(request, response, next).get_upapproved_count());
+    } catch (e) {
+        next(e);
+    }
+});
+
+router.get('/:id', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).get_coin_by_id());
     } catch (e) {
         next(e);
     }

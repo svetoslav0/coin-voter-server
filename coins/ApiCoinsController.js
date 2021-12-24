@@ -62,7 +62,7 @@ export class ApiCoinsController extends ApiController {
         await this._validate_get_coins_params();
 
         const { limit, offset, order, approved } = this._query;
-        const coins = await this._repository.coins.search_approved_coins(limit, offset, approved, order);
+        const coins = await this._repository.coins.search_coins(limit, offset, approved, order);
 
         return {
             coins: await this._parse_response(coins)
@@ -77,6 +77,26 @@ export class ApiCoinsController extends ApiController {
     async get_upapproved_count() {
         const count = await this._repository.coins.get_unapproved_count();
         return { count };
+    }
+
+    /**
+     * @returns {Promise<ApiCoin>}
+     */
+    async get_coin_by_id() {
+        const coin = await this._validate_coin_id_param();
+        coin.is_approved = coin.is_approved == "1";
+
+        coin.has_upvoted = false;
+        if (this._request.user_id && this._request.role_id) {
+            const vote = await this._repository.votes.get_vote(this._request.user_id, coin.id);
+            if (vote) {
+                coin.has_upvoted = true;
+            }
+        }
+
+        coin.votes_count = await this._repository.votes.get_votes_for_coin(coin.id);
+
+        return coin;
     }
 
     /**
@@ -133,7 +153,7 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
-     * @returns {Promise<void>}
+     * @returns {Promise<ApiCoin>}
      * @private
      */
     async _validate_coin_id_param() {
@@ -143,6 +163,8 @@ export class ApiCoinsController extends ApiController {
         if (!coin) {
             throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_ID, { ID: id });
         }
+
+        return coin;
     }
 
     /**
