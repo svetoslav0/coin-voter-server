@@ -3,7 +3,7 @@ import { ApiError } from '../common/ApiError.js';
 const ERRORS = {
     INVALID_DATE: {
         status: 400,
-        message: 'launch_date field must be in format YYYY-MM-DD'
+        message: '{FIELD} field must be in format YYYY-MM-DD'
     },
     NON_EXISTING_COIN_ID: {
         status: 404,

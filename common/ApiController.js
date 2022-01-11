@@ -6,4 +6,12 @@ export class ApiController {
         this._query = Object.assign(request.query || {}, request.body || {});
         this._repository = request.repository;
     }
+
+    _parse_numeric_value_to_boolean(value) {
+        if (!isNaN(value)) {
+            return !!(+value);
+        }
+
+        return !!value;
+    }
 }

@@ -61,11 +61,15 @@ export class ApiCoinsController extends ApiController {
     async search() {
         await this._validate_get_coins_params();
 
-        const { limit, offset, order, approved } = this._query;
-        const coins = await this._repository.coins.search_coins(limit, offset, approved, order);
+        const { limit, offset, order, approved, date_added } = this._query;
+        const coins = await this._repository.coins.search_coins(limit, offset, approved, order, date_added);
+        const total = await this._repository.coins.get_total_from_search(approved, date_added);
 
         return {
-            coins: await this._parse_response(coins)
+            total,
+            count: coins.length,
+            offset: +this._query.offset,
+            coins: await this._parse_search_response(coins)
         };
     }
 
@@ -99,6 +103,22 @@ export class ApiCoinsController extends ApiController {
         return coin;
     }
 
+    async get_promoted() {
+        this._validate_limit_and_offset_params();
+        const { limit, offset } = this._query;
+
+        const coins = await this._repository.coins.get_promoted_only(limit, offset);
+        const total = await this._repository.coins.get_total_promoted();
+        coins.forEach(c => c.is_presale = this._parse_numeric_value_to_boolean(c.is_presale));
+
+        return {
+            total,
+            count: coins.length,
+            offset: +this._query.offset,
+            coins: await this._attach_votes_for_user_for_each_coin(coins)
+        };
+    }
+
     /**
      * @returns {Promise<void>}
      * @private
@@ -119,7 +139,7 @@ export class ApiCoinsController extends ApiController {
         }
 
         if (!moment(launch_date, 'YYYY-MM-DD', true).isValid()) {
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE);
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE, { FIELD: 'launch_date' });
         }
 
         if (!website) {
@@ -173,7 +193,32 @@ export class ApiCoinsController extends ApiController {
      */
     async _validate_get_coins_params() {
         this._set_default_search_values();
-        const { limit, offset, order, approved } = this._query;
+        const { order, approved, date_added } = this._query;
+
+        this._validate_limit_and_offset_params();
+
+        if (!Object.values(CONSTANTS.COIN_ORDERS).includes(order.toLowerCase())) {
+            const order_list = Object.values(CONSTANTS.COIN_ORDERS).join(', ');
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
+        }
+
+        const approvedValue = approved?.toString().trim().toLowerCase();
+        if (approvedValue && approvedValue !== 'true' && approvedValue !== 'false') {
+            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'approved' });
+        }
+
+        if (date_added) {
+            if (!moment(date_added, 'YYYY-MM-DD', true).isValid()) {
+                throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE, { FIELD: 'date_added' });
+            }
+
+            // this._query.date_added = moment.utc(date_added).toDate();
+        }
+    }
+
+    _validate_limit_and_offset_params() {
+        this._set_default_promoted_values();
+        const { limit, offset } = this._query;
 
         if (isNaN(limit)) {
             throw new ApiError(ApiError.ERRORS.NON_NUMERIC_PARAM, { FIELD: 'limit' });
@@ -189,16 +234,6 @@ export class ApiCoinsController extends ApiController {
 
         if (offset < 0) {
             throw new ApiError(ApiError.ERRORS.NEGATIVE_PARAM, { FIELD: 'offset' });
-        }
-
-        if (!Object.values(CONSTANTS.COIN_ORDERS).includes(order.toLowerCase())) {
-            const order_list = Object.values(CONSTANTS.COIN_ORDERS).join(', ');
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
-        }
-
-        const approvedValue = approved?.toString().trim().toLowerCase();
-        if (approvedValue && approvedValue !== 'true' && approvedValue !== 'false') {
-            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'approved' });
         }
     }
 
@@ -222,11 +257,26 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
+     * @private
+     */
+    _set_default_promoted_values() {
+        const { limit, offset } = this._query;
+
+        if (!limit) {
+            this._query.limit = CONSTANTS.RESTRICTIONS.DEFAULT_PROMOTED_LIMIT;
+        }
+
+        if (!offset) {
+            this._query.offset = CONSTANTS.RESTRICTIONS.DEFAULT_SEARCH_OFFSET;
+        }
+    }
+
+    /**
      * @param coins
      * @returns {Promise<*>}
      * @private
      */
-    async _parse_response(coins) {
+    async _parse_search_response(coins) {
         coins = await this._attach_votes_for_user_for_each_coin(coins);
         coins = this._parse_is_approved_filed(coins);
         return coins;
@@ -247,6 +297,9 @@ export class ApiCoinsController extends ApiController {
     async _attach_votes_for_user_for_each_coin(coins) {
         if (this._request.user_id && this._request.role_id) {
             const ids = coins.map(c => c.id);
+            if (!ids.length) {
+                return [];
+            }
 
             const voted_coin_ids = (await this._repository
                 .coins

@@ -45,6 +45,14 @@ router.get('/unapprovedCount', ApiMiddleware.is_user_admin, async (request, resp
     }
 });
 
+router.get('/promoted', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).get_promoted())
+    } catch (e) {
+        next(e);
+    }
+});
+
 router.get('/:id', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).get_coin_by_id());

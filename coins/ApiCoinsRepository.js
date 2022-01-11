@@ -153,11 +153,13 @@ class ApiCoinsRepository extends ApiRepository {
     /**
      * @param limit
      * @param offset
+     * @param approved
      * @param order
+     * @param date_added
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_coins(limit, offset, approved, order, ascending_order = false) {
+    async search_coins(limit, offset, approved, order, date_added, ascending_order = false) {
         const query = `
             SELECT
                 n.id,
@@ -165,6 +167,10 @@ class ApiCoinsRepository extends ApiRepository {
                 n.symbol,
                 n.launch_date,
                 n.is_approved,
+                n.date_added,
+                n.logo_url,
+                n.is_presale,
+                FORMAT(n.price, 16) AS price,
                 COUNT(n.coin_id) AS votes
             FROM (
                 SELECT
@@ -173,6 +179,10 @@ class ApiCoinsRepository extends ApiRepository {
                     c.symbol,
                     c.launch_date,
                     c.is_approved,
+                    c.date_added,
+                    c.logo_url,
+                    c.is_presale,
+                    c.price,
                     v.coin_id
                 FROM
                     coins AS c
@@ -185,19 +195,150 @@ class ApiCoinsRepository extends ApiRepository {
                         ? 'WHERE c.is_approved = 1'
                         : 'WHERE c.is_approved = 0'
                     : ''}
+                ${approved !== undefined && date_added
+                    ? ' AND DATE(c.date_added) = ?'
+                    : '' }
+                ${approved === undefined && date_added
+                    ? ' WHERE DATE(c.date_added) = ?'
+                    : '' }
             ) AS n
             GROUP BY
                 n.id,
                 n.name,
                 n.symbol,
                 n.launch_date,
-                n.is_approved
+                n.is_approved,
+                n.logo_url,
+                n.is_presale,
+                n.price,
+                n.date_added
             ORDER BY
                 ${order} ${ascending_order ? 'ASC' : 'DESC'}
             LIMIT ?, ?
         `;
 
-        return this._query(query, [+offset, +limit]);
+        const parameters = [];
+        if (date_added) {
+            parameters.push(date_added);
+        }
+
+        parameters.push(+offset);
+        parameters.push(+limit);
+
+        return this._query(query, parameters);
+    }
+
+    /**
+     * @param approved
+     * @param date_added
+     * @returns {Promise<number>}
+     */
+    async get_total_from_search(approved, date_added) {
+        const query = `
+            SELECT
+                COUNT(*) AS total
+            FROM
+                coins
+            ${approved !== undefined
+                ? approved === 'true'
+                        ? 'WHERE is_approved = 1'
+                        : 'WHERE is_approved = 0'
+                : ''}
+            ${approved !== undefined && date_added
+                ? ' AND DATE(date_added) = ?'
+                : '' }
+            ${approved === undefined && date_added
+                ? ' WHERE DATE(date_added) = ?'
+                : '' }
+        `;
+
+        const params = [];
+        if (date_added) {
+            params.push(date_added);
+        }
+
+        const result = await this._query(query, params);
+        if (result.length) {
+            return result[0].total;
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param {number} limit
+     * @param {number} offset
+     * @returns {Promise<Array>}
+     */
+    async get_promoted_only(limit , offset) {
+        const query = `
+            SELECT
+                n.id,
+                n.name,
+                n.symbol,
+                n.logo_url,
+                n.is_presale,
+                n.launch_date,
+                n.date_promoted,
+                FORMAT(n.price, 16) AS price,
+                COUNT(coin_votes.user_id) AS votes
+            FROM
+                coin_votes
+            RIGHT JOIN (
+                SELECT
+                    c.id,
+                    c.name,
+                    c.symbol,
+                    c.logo_url,
+                    c.price,
+                    c.is_presale,
+                    c.launch_date,
+                    p.date_promoted
+                FROM
+                    coins AS c
+                INNER JOIN
+                    promoted_coins AS p
+                ON c.id = p.coin_id
+            ) AS n
+            ON coin_votes.coin_id = n.id
+            GROUP BY
+                n.id,
+                n.name,
+                n.symbol,
+                n.logo_url,
+                n.price,
+                n.is_presale,
+                n.launch_date,
+                n.date_promoted
+            ORDER BY
+                n.date_promoted DESC
+            LIMIT ?, ?
+        `;
+
+        const params = [+offset, +limit];
+        return this._query(query, params);
+    }
+
+    /**
+     * @returns {Promise<number>}
+     */
+    async get_total_promoted() {
+        const query = `
+            SELECT 
+                COUNT(*) AS total
+            FROM
+                coins
+            INNER JOIN 
+                promoted_coins AS p
+            ON coins.id = p.coin_id
+        `;
+
+        const result = await this._query(query);
+        if (result.length) {
+            return result[0].total;
+        }
+
+        return 0;
     }
 
     /**
