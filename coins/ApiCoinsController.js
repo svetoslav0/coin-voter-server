@@ -73,6 +73,14 @@ export class ApiCoinsController extends ApiController {
         };
     }
 
+    async keywordSearch() {
+        this._validate_keyword_param();
+        const { keyword } = this._query;
+
+        const coins = await this._repository.coins.search_by_keyword(keyword);
+        return { coins };
+    }
+
     /**
      * TODO: Remove!
      * @deprecated
@@ -234,6 +242,14 @@ export class ApiCoinsController extends ApiController {
 
         if (offset < 0) {
             throw new ApiError(ApiError.ERRORS.NEGATIVE_PARAM, { FIELD: 'offset' });
+        }
+    }
+
+    _validate_keyword_param() {
+        const { keyword } = this._query;
+
+        if (!keyword) {
+            throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'keyword' });
         }
     }
 

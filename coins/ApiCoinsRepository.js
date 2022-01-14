@@ -1,3 +1,4 @@
+import { CONSTANTS } from '../common/config/CONSTANTS.js';
 import { ApiRepository } from '../common/ApiRepository.js';
 
 class ApiCoinsRepository extends ApiRepository {
@@ -224,6 +225,35 @@ class ApiCoinsRepository extends ApiRepository {
 
         parameters.push(+offset);
         parameters.push(+limit);
+
+        return this._query(query, parameters);
+    }
+
+    /**
+     * @param {string} keyword
+     * @param {number} limit
+     * @returns {Promise<*>}
+     */
+    async search_by_keyword(keyword, limit = CONSTANTS.RESTRICTIONS.DEFAULT_KEYWORD_SEARCH_LIMIT) {
+        keyword = `%${keyword}%`;
+
+        const query = `
+            SELECT
+                id,
+                name,
+                symbol,
+                logo_url,
+                contract_address
+            FROM
+                coins
+            WHERE
+                name LIKE ? OR
+                symbol LIKE ? OR
+                contract_address LIKE ?
+            LIMIT ?
+        `;
+
+        const parameters = [keyword, keyword, keyword, limit];
 
         return this._query(query, parameters);
     }

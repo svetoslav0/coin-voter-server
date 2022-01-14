@@ -37,6 +37,14 @@ router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, n
     }
 });
 
+router.get('/keywordSearch', async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).keywordSearch());
+    } catch (e) {
+        next(e);
+    }
+});
+
 router.get('/unapprovedCount', ApiMiddleware.is_user_admin, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).get_upapproved_count());
