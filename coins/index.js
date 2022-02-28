@@ -1,4 +1,4 @@
-import express, {request, response} from 'express';
+import express from 'express';
 
 import { ApiMiddleware } from '../common/ApiMiddleware.js';
 import { ApiCoinsController } from './ApiCoinsController.js';
@@ -39,7 +39,7 @@ router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, n
 
 router.get('/keywordSearch', async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).keywordSearch());
+        return response.json(await new ApiCoinsController(request, response, next).keyword_search());
     } catch (e) {
         next(e);
     }

@@ -73,7 +73,7 @@ export class ApiCoinsController extends ApiController {
         };
     }
 
-    async keywordSearch() {
+    async keyword_search() {
         this._validate_keyword_param();
         const { keyword } = this._query;
 
