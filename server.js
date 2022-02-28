@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import Util from 'util';
+import 'dotenv/config';
 
 import { router } from './routes.js';
 import { ApiMiddleware } from './common/ApiMiddleware.js';

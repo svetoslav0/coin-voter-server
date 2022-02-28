@@ -6,6 +6,16 @@ export const CONSTANTS = {
         USER_ROLE_ID: 1,
         ADMIN_ROLE_ID: 2
     },
+    LOGIN_TYPE_IDS: {
+        DEFAULT: 1,
+        GOOGLE: 2,
+        TWITTER: 3
+    },
+    LOGIN_TYPES: {
+        DEFAULT: 'DEFAULT',
+        GOOGLE: 'GOOGLE',
+        TWITTER: 'TWITTER'
+    },
     COIN_ORDERS: {
         VOTES: 'votes',
         ID: 'id'
