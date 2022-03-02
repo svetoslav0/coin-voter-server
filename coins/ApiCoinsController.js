@@ -28,7 +28,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<void>}
      */
     async approve() {
-        await this._validate_coin_id_param();
+        await this._validate_coin_id_param_and_get_coin();
         await this._repository.coins.update_status(this._request.params.id, 1);
     }
 
@@ -36,7 +36,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<{upvoted: boolean}>}
      */
     async vote() {
-        await this._validate_coin_id_param();
+        await this._validate_coin_id_param_and_get_coin();
         const coin_id = this._request.params.id;
         const user_id = this._request.user_id;
 
@@ -95,7 +95,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<ApiCoin>}
      */
     async get_coin_by_id() {
-        const coin = await this._validate_coin_id_param();
+        const coin = await this._validate_coin_id_param_and_get_coin();
         coin.is_approved = coin.is_approved == "1";
 
         coin.has_upvoted = false;
@@ -107,6 +107,7 @@ export class ApiCoinsController extends ApiController {
         }
 
         coin.votes_count = await this._repository.votes.get_votes_for_coin(coin.id);
+        coin.is_owner = this._request.user_id == coin.owner;
 
         return coin;
     }
@@ -184,7 +185,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<ApiCoin>}
      * @private
      */
-    async _validate_coin_id_param() {
+    async _validate_coin_id_param_and_get_coin() {
         const id = this._request.params.id;
         const coin = await this._repository.coins.get_coin_by_id(id);
 
