@@ -29,6 +29,14 @@ router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, respons
     }
 });
 
+router.delete('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).remove_vote());
+    } catch (e) {
+        next(e);
+    }
+})
+
 router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).search());

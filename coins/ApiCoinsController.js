@@ -56,6 +56,25 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
+     * @returns {Promise<{success: boolean}>}
+     */
+    async remove_vote() {
+        await this._validate_coin_id_param_and_get_coin();
+        const coin_id = this._request.params.id;
+        const user_id = this._request.user_id;
+
+        const vote = await this._repository.votes.get_vote(user_id, coin_id);
+        if (!vote) {
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_VOTE);
+        }
+
+        await this._repository.votes.remove(user_id, coin_id);
+        return {
+            success: true
+        };
+    }
+
+    /**
      * @returns {Promise<{coins: *}>}
      */
     async search() {

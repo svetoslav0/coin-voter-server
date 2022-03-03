@@ -12,6 +12,10 @@ const ERRORS = {
     INVALID_COIN_ORDER: {
         status: 400,
         message: 'Invalid order, must be one these: {ORDER_LIST}'
+    },
+    NON_EXISTING_COIN_VOTE: {
+        status: 400,
+        message: 'Cannot remove non-existing vote'
     }
 };
 
