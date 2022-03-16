@@ -1,9 +1,10 @@
 import moment from 'moment';
 
 import { CONSTANTS } from '../common/config/CONSTANTS.js';
-import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 import { ApiCoinsError } from './ApiCoinsError.js';
+import { ApiCategoriesError } from '../categories/ApiCategoriesError.js';
+import { ApiController } from '../common/ApiController.js';
 import { ApiVotesController } from '../votes/ApiVotesController.js';
 
 const DEFAULT_ORDER = CONSTANTS.COIN_ORDERS.ID;
@@ -40,16 +41,16 @@ export class ApiCoinsController extends ApiController {
         await this._validate_get_coins_params();
 
         // todo: can be in other method
-        const { limit, offset, order, approved, is_presale, date_added, is_promoted } = this._query;
+        const { limit, offset, order, approved, is_presale, date_added, is_promoted, category } = this._query;
 
         let coins;
         if (this._is_used_logged()) {
             // todo: better pass 'filter' object
-            coins = await this._repository.coins.search_coins_for_logged_user(this._request.user_id, limit, offset, order, date_added, approved, is_presale, is_promoted, this._query.descending_order);
+            coins = await this._repository.coins.search_coins_for_logged_user(this._request.user_id, limit, offset, order, date_added, approved, is_presale, is_promoted, category, this._query.descending_order);
             coins = await this._attach_votes_for_user(coins);
             coins = await this._attach_total_votes(coins);
         } else {
-            coins = await this._repository.coins.search_coins_for_no_user(limit, offset, order, date_added, approved, is_presale, is_promoted, this._query.descending_order);
+            coins = await this._repository.coins.search_coins_for_no_user(limit, offset, order, date_added, approved, is_presale, is_promoted, category, this._query.descending_order);
         }
 
         const total = await this._repository.coins.get_total_from_search(approved, date_added);
@@ -159,7 +160,7 @@ export class ApiCoinsController extends ApiController {
      * @private
      */
     async _validate_request_addition_params() {
-        const { name, symbol, launch_date, website } = this._query;
+        const { name, symbol, category, launch_date, website } = this._query;
 
         if (!name) {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'name' });
@@ -167,6 +168,15 @@ export class ApiCoinsController extends ApiController {
 
         if (!symbol) {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'symbol' });
+        }
+
+        if (!category) {
+            throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'category' });
+        }
+
+        const foundCategory = await this._repository.categories.find_by_id(category);
+        if (!foundCategory) {
+            throw new ApiCategoriesError(ApiCategoriesError.ERRORS.NON_EXISTING_CATEGORY_ID, { ID: category })
         }
 
         if (!launch_date) {
@@ -195,6 +205,7 @@ export class ApiCoinsController extends ApiController {
             name: this._query.name,
             description: this._query.description,
             symbol: this._query.symbol,
+            category: this._query.category,
             launch_date: this._query.launch_date,
             logo_url: this._query.logo_url,
             price: this._query.price,
@@ -213,7 +224,7 @@ export class ApiCoinsController extends ApiController {
      */
     async _validate_get_coins_params() {
         this._set_default_search_values();
-        const { order, approved, is_presale, date_added, is_promoted } = this._query;
+        const { order, approved, is_presale, date_added, is_promoted, category } = this._query;
         const [order_value, order_turn] = order.split(':');
 
         this._validate_limit_and_offset_params();
@@ -251,6 +262,13 @@ export class ApiCoinsController extends ApiController {
         if (date_added) {
             if (!moment(date_added, 'YYYY-MM-DD', true).isValid()) {
                 throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE, { FIELD: 'date_added' });
+            }
+        }
+
+        if (category) {
+            const foundCategory = await this._repository.categories.find_by_id(category);
+            if (!foundCategory) {
+                throw new ApiCategoriesError(ApiCategoriesError.ERRORS.NON_EXISTING_CATEGORY_ID, { ID: category })
             }
         }
     }

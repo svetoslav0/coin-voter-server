@@ -15,6 +15,7 @@ import { CONSTANTS } from './common/config/CONSTANTS.js';
 import UsersRepository from './users/ApiUsersRepository.js';
 import CoinsRepository from './coins/ApiCoinsRepository.js';
 import VotesRepository from './votes/ApiVotesRepository.js';
+import CategoriesRepository from './categories/ApiCategoriesRepository.js';
 
 const dbConnection = (new DbFactory()).create(CONSTANTS.DB_DRIVERS.MYSQL).get_connection();
 const queryFunc = Util.promisify(dbConnection.query).bind(dbConnection);
@@ -49,7 +50,8 @@ app.use(
             request.repository = {
                 users: new UsersRepository(queryFunc),
                 coins: new CoinsRepository(queryFunc),
-                votes: new VotesRepository(queryFunc)
+                votes: new VotesRepository(queryFunc),
+                categories: new CategoriesRepository(queryFunc),
             };
             next();
         } catch (err) {

@@ -9,26 +9,32 @@ class ApiCoinsRepository extends ApiRepository {
     async get_coin_by_id(id) {
         const query = `
             SELECT
-                id,
-                name,
-                description,
-                symbol,
-                launch_date,
-                owner,
-                is_approved,
-                date_added,
-                logo_url,
-                FORMAT(price, 16) AS price,
-                FORMAT(market_cap, 4) AS market_cap,
-                is_presale,
-                website,
-                telegram,
-                twitter,
-                contract_address
+                coins.id,
+                coins.name,
+                coins.description,
+                coins.symbol,
+                coins.launch_date,
+                coins.owner,
+                coins.is_approved,
+                coins.date_added,
+                coins.logo_url,
+                FORMAT(coins.price, 16) AS price,
+                FORMAT(coins.market_cap, 4) AS market_cap,
+                coins.is_presale,
+                coins.website,
+                coins.telegram,
+                coins.twitter,
+                coins.contract_address,
+                categories.id AS category_id,
+                categories.name AS category_name
             FROM
                 coins
+            INNER JOIN
+                categories
+                    ON
+                coins.category = categories.id
             WHERE
-                id = ?
+                coins.id = ?
         `;
 
         const result = await this._query(query, [id]);
@@ -82,6 +88,7 @@ class ApiCoinsRepository extends ApiRepository {
                     name,
                     description,
                     symbol,
+                    category,
                     launch_date,
                     owner,
                     is_approved,
@@ -108,6 +115,7 @@ class ApiCoinsRepository extends ApiRepository {
                 ?,
                 ?,
                 ?,
+                ?,
                 ?
             )
         `;
@@ -118,6 +126,7 @@ class ApiCoinsRepository extends ApiRepository {
                 coin.name,
                 coin.description,
                 coin.symbol,
+                coin.category,
                 coin.launch_date,
                 user_id,
                 is_approved ? 1 : 0,
@@ -160,15 +169,17 @@ class ApiCoinsRepository extends ApiRepository {
      * @param is_approved
      * @param is_presale
      * @param is_promoted
+     * @param category
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_coins_for_logged_user(user_id, limit, offset, order, date_added, is_approved, is_presale, is_promoted, ascending_order = false) {
+    async search_coins_for_logged_user(user_id, limit, offset, order, date_added, is_approved, is_presale, is_promoted, category, ascending_order = false) {
         const query = `
             SELECT 
                 nested.id,
                 nested.name,
                 nested.symbol,
+                nested.category,
                 nested.date_added,
                 nested.launch_date,
                 nested.is_approved,
@@ -190,6 +201,7 @@ class ApiCoinsRepository extends ApiRepository {
                 SELECT c.id,
                     c.name,
                     c.symbol,
+                    c.category,
                     v.user_id,
                     c.date_added,
                     c.launch_date,
@@ -207,12 +219,11 @@ class ApiCoinsRepository extends ApiRepository {
                         coin_votes AS v
                             ON
                                 c.id = v.coin_id
-                WHERE 
-                    c.is_approved = 1
                 GROUP BY
                     c.id,
                     c.name,
                     c.symbol,
+                    c.category,
                     c.date_added,
                     c.launch_date,
                     c.is_approved,
@@ -237,8 +248,12 @@ class ApiCoinsRepository extends ApiRepository {
                     : ''
                 }
                 ${date_added
-                    ? ' AND DATE(nested.date_added) = ?'
-                    : ''
+                        ? ' AND DATE(nested.date_added) = ?'
+                        : ''
+                }
+                ${category
+                        ? ' AND category = ?'
+                        : ''
                 }
             GROUP BY
                 nested.id,
@@ -277,6 +292,10 @@ class ApiCoinsRepository extends ApiRepository {
             parameters.push(date_added);
         }
 
+        if (category) {
+            parameters.push(category);
+        }
+
         if (is_promoted) {
             parameters.push(is_promoted === 'true' ? 1 : 0);
         }
@@ -295,15 +314,17 @@ class ApiCoinsRepository extends ApiRepository {
      * @param is_approved
      * @param is_presale
      * @param is_promoted
+     * @param category
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_coins_for_no_user(limit, offset, order, date_added, is_approved, is_presale, is_promoted, ascending_order = false) {
+    async search_coins_for_no_user(limit, offset, order, date_added, is_approved, is_presale, is_promoted, category, ascending_order = false) {
         const query = `
             SELECT
                 c.id,
                 c.name,
                 c.symbol,
+                c.category,
                 c.date_added,
                 c.launch_date,
                 c.is_approved,
@@ -330,15 +351,19 @@ class ApiCoinsRepository extends ApiRepository {
             WHERE
                 1 = 1
                 ${is_approved
-                        ? ' AND c.is_approved = ?'
-                        : ''
+                    ? ' AND c.is_approved = ?'
+                    : ''
                 }
                 ${is_presale
-                        ? ' AND c.is_presale = ?'
-                        : ''
+                    ? ' AND c.is_presale = ?'
+                    : ''
                 }
                 ${date_added
                     ? ' AND DATE(c.date_added) = ?'
+                    : ''
+                }
+                ${category
+                    ? ' AND category = ?'
                     : ''
                 }
             GROUP BY
@@ -375,6 +400,10 @@ class ApiCoinsRepository extends ApiRepository {
 
         if (date_added) {
             parameters.push(date_added);
+        }
+
+        if (category) {
+            parameters.push(category);
         }
 
         if (is_promoted) {

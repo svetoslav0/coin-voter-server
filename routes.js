@@ -3,12 +3,14 @@ import express from 'express';
 import users from './users/index.js';
 import coins from './coins/index.js';
 import votes from './votes/index.js';
+import categories from './categories/index.js';
 
 const router = express.Router();
 
 router.use('/users', users);
 router.use('/coins', coins);
 router.use('/votes', votes);
+router.use('/categories', categories);
 
 router.all('*', (request, response) => {
     console.log(request);
