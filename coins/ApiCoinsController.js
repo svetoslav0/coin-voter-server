@@ -1,9 +1,10 @@
 import moment from 'moment';
 
+import { CONSTANTS } from '../common/config/CONSTANTS.js';
 import { ApiController } from '../common/ApiController.js';
 import { ApiError } from '../common/ApiError.js';
 import { ApiCoinsError } from './ApiCoinsError.js';
-import { CONSTANTS } from '../common/config/CONSTANTS.js';
+import { ApiVotesController } from '../votes/ApiVotesController.js';
 
 const DEFAULT_ORDER = CONSTANTS.COIN_ORDERS.ID;
 
@@ -33,65 +34,87 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
-     * @returns {Promise<{upvoted: boolean}>}
-     */
-    async vote() {
-        await this._validate_coin_id_param_and_get_coin();
-        const coin_id = this._request.params.id;
-        const user_id = this._request.user_id;
-
-        const vote = await this._repository.votes.get_vote(user_id, coin_id);
-
-        if (!vote) {
-            await this._repository.votes.add(user_id, coin_id);
-            return {
-                upvoted: true
-            };
-        }
-
-        await this._repository.votes.remove(user_id, coin_id);
-        return {
-            upvoted: false
-        };
-    }
-
-    /**
-     * @returns {Promise<{success: boolean}>}
-     */
-    async remove_vote() {
-        await this._validate_coin_id_param_and_get_coin();
-        const coin_id = this._request.params.id;
-        const user_id = this._request.user_id;
-
-        const vote = await this._repository.votes.get_vote(user_id, coin_id);
-        if (!vote) {
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_VOTE);
-        }
-
-        await this._repository.votes.remove(user_id, coin_id);
-        return {
-            success: true
-        };
-    }
-
-    /**
      * @returns {Promise<{coins: *}>}
      */
     async search() {
         await this._validate_get_coins_params();
 
-        const { limit, offset, order, approved, date_added } = this._query;
-        const coins = await this._repository.coins.search_coins(limit, offset, approved, order, date_added);
+        // todo: can be in other method
+        const { limit, offset, order, approved, is_presale, date_added, is_promoted } = this._query;
+
+        let coins;
+        if (this._is_used_logged()) {
+            // todo: better pass 'filter' object
+            coins = await this._repository.coins.search_coins_for_logged_user(this._request.user_id, limit, offset, order, date_added, approved, is_presale, is_promoted, this._query.descending_order);
+            coins = await this._attach_votes_for_user(coins);
+            coins = await this._attach_total_votes(coins);
+        } else {
+            coins = await this._repository.coins.search_coins_for_no_user(limit, offset, order, date_added, approved, is_presale, is_promoted, this._query.descending_order);
+        }
+
         const total = await this._repository.coins.get_total_from_search(approved, date_added);
 
         return {
             total,
             count: coins.length,
             offset: +this._query.offset,
-            coins: await this._parse_search_response(coins)
+            coins
         };
     }
 
+    /**
+     * @param coins
+     * @returns {Promise<*>}
+     * @private
+     */
+    async _attach_votes_for_user(coins) {
+        if (!coins.length) {
+            return coins;
+        }
+
+        const ids = coins.map(c => c.id);
+        const latest_votes = await this._repository.votes.get_latest_votes_for_user(ids, this._request.user_id);
+
+        return coins.map(c => {
+            c.user_last_voted = null;
+            const vote = latest_votes.filter(v => v.coin_id == c.id);
+
+            if (vote.length) {
+                c.user_last_voted = vote[0].latest_vote;
+            }
+
+            return c;
+        });
+    }
+
+    /**
+     * @param coins
+     * @returns {Promise<*>}
+     * @private
+     */
+    async _attach_total_votes(coins) {
+        if (!coins.length) {
+            return coins;
+        }
+
+        const ids = coins.map(c => c.id);
+        const total_votes = await this._repository.votes.get_total_votes_for_coin_ids(ids);
+
+        return coins.map(c => {
+            c.total_votes = 0;
+
+            const votes = total_votes.filter(v => v.coin_id == c.id);
+            if (votes.length) {
+                c.total_votes = votes[0].total_votes;
+            }
+
+            return c;
+        });
+    }
+
+    /**
+     * @returns {Promise<{coins: *}>}
+     */
     async keyword_search() {
         this._validate_keyword_param();
         const { keyword } = this._query;
@@ -117,34 +140,18 @@ export class ApiCoinsController extends ApiController {
         const coin = await this._validate_coin_id_param_and_get_coin();
         coin.is_approved = coin.is_approved == "1";
 
-        coin.has_upvoted = false;
+        coin.user_last_voted = null;
         if (this._request.user_id && this._request.role_id) {
-            const vote = await this._repository.votes.get_vote(this._request.user_id, coin.id);
-            if (vote) {
-                coin.has_upvoted = true;
+            const vote = await this._repository.votes.get_last_vote(this._request.user_id, coin.id);
+            if (vote && !ApiVotesController.can_vote_again(vote)) {
+                coin.user_last_voted = vote.time_voted;
             }
         }
 
-        coin.votes_count = await this._repository.votes.get_votes_for_coin(coin.id);
+        coin.total_votes = await this._repository.votes.get_votes_for_coin(coin.id);
         coin.is_owner = this._request.user_id == coin.owner;
 
         return coin;
-    }
-
-    async get_promoted() {
-        this._validate_limit_and_offset_params();
-        const { limit, offset } = this._query;
-
-        const coins = await this._repository.coins.get_promoted_only(limit, offset);
-        const total = await this._repository.coins.get_total_promoted();
-        coins.forEach(c => c.is_presale = this._parse_numeric_value_to_boolean(c.is_presale));
-
-        return {
-            total,
-            count: coins.length,
-            offset: +this._query.offset,
-            coins: await this._attach_votes_for_user_for_each_coin(coins)
-        };
     }
 
     /**
@@ -201,49 +208,56 @@ export class ApiCoinsController extends ApiController {
     }
 
     /**
-     * @returns {Promise<ApiCoin>}
-     * @private
-     */
-    async _validate_coin_id_param_and_get_coin() {
-        const id = this._request.params.id;
-        const coin = await this._repository.coins.get_coin_by_id(id);
-
-        if (!coin) {
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.NON_EXISTING_COIN_ID, { ID: id });
-        }
-
-        return coin;
-    }
-
-    /**
      * @returns {Promise<void>}
      * @private
      */
     async _validate_get_coins_params() {
         this._set_default_search_values();
-        const { order, approved, date_added } = this._query;
+        const { order, approved, is_presale, date_added, is_promoted } = this._query;
+        const [order_value, order_turn] = order.split(':');
 
         this._validate_limit_and_offset_params();
 
-        if (!Object.values(CONSTANTS.COIN_ORDERS).includes(order.toLowerCase())) {
+        // todo: can be abstracted, to be fixed!
+
+        if (!Object.values(CONSTANTS.COIN_ORDERS).includes(order_value.toLowerCase())) {
             const order_list = Object.values(CONSTANTS.COIN_ORDERS).join(', ');
-            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER, { ORDER_LIST: order_list });
+            throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER_VALUE, { ORDER_LIST: order_list });
+        }
+        this._query.order = order_value;
+
+        if (order_turn) {
+            if (order_turn.toLowerCase() !== 'asc' && order_turn.toLowerCase() !== 'desc') {
+                throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_COIN_ORDER);
+            }
+            this._query.descending_order = true;
         }
 
-        const approvedValue = approved?.toString().trim().toLowerCase();
-        if (approvedValue && approvedValue !== 'true' && approvedValue !== 'false') {
+        const approved_value = approved?.toString().trim().toLowerCase();
+        if (approved_value && approved_value !== 'true' && approved_value !== 'false') {
             throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'approved' });
+        }
+
+        const is_presale_value = is_presale?.toString().trim().toLowerCase();
+        if (is_presale_value && is_presale_value !== 'true' && is_presale_value !== 'false') {
+            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'is_presale' });
+        }
+
+        const is_promoted_value = is_promoted?.toString().trim().toLowerCase();
+        if (is_promoted_value && is_promoted_value !== 'true' && is_promoted_value !== 'false') {
+            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'is_promoted' });
         }
 
         if (date_added) {
             if (!moment(date_added, 'YYYY-MM-DD', true).isValid()) {
                 throw new ApiCoinsError(ApiCoinsError.ERRORS.INVALID_DATE, { FIELD: 'date_added' });
             }
-
-            // this._query.date_added = moment.utc(date_added).toDate();
         }
     }
 
+    /**
+     * @private
+     */
     _validate_limit_and_offset_params() {
         this._set_default_promoted_values();
         const { limit, offset } = this._query;
@@ -265,6 +279,9 @@ export class ApiCoinsController extends ApiController {
         }
     }
 
+    /**
+     * @private
+     */
     _validate_keyword_param() {
         const { keyword } = this._query;
 
@@ -305,52 +322,5 @@ export class ApiCoinsController extends ApiController {
         if (!offset) {
             this._query.offset = CONSTANTS.RESTRICTIONS.DEFAULT_SEARCH_OFFSET;
         }
-    }
-
-    /**
-     * @param coins
-     * @returns {Promise<*>}
-     * @private
-     */
-    async _parse_search_response(coins) {
-        coins = await this._attach_votes_for_user_for_each_coin(coins);
-        coins = this._parse_is_approved_filed(coins);
-        return coins;
-    }
-
-    _parse_is_approved_filed(coins) {
-        return coins.map(c => {
-            c.is_approved = c.is_approved == 1;
-            return c;
-        });
-    }
-
-    /**
-     * @param coins
-     * @returns {Promise<*>}
-     * @private
-     */
-    async _attach_votes_for_user_for_each_coin(coins) {
-        if (this._request.user_id && this._request.role_id) {
-            const ids = coins.map(c => c.id);
-            if (!ids.length) {
-                return [];
-            }
-
-            const voted_coin_ids = (await this._repository
-                .coins
-                .get_upvoted_coins_for_user(this._request.user_id, ids))
-                .map(x => x.id);
-
-            return coins.map(c => {
-                c.has_upvoted = !!voted_coin_ids.includes(c.id);
-                return c;
-            });
-        }
-
-        return coins.map(c => {
-            c.has_upvoted = false;
-            return c;
-        });
     }
 }

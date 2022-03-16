@@ -77,4 +77,4 @@ app.use(function (err, req, res, next) {
         .send({ error: errorMessage });
 });
 
-app.listen(port, () => console.log(`Running on port ${port} . . .`))
+app.listen(port, () => console.log(`Running on port ${port} . . .`));

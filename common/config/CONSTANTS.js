@@ -7,7 +7,9 @@ export const CONSTANTS = {
         ADMIN_ROLE_ID: 2
     },
     COIN_ORDERS: {
-        VOTES: 'votes',
+        DATE_ADDED: 'date_added',
+        DATE_PROMOTED: 'date_promoted',
+        TOTAL_VOTES: 'total_votes',
         ID: 'id'
     },
     RESTRICTIONS: {
@@ -16,6 +18,7 @@ export const CONSTANTS = {
         DEFAULT_SEARCH_LIMIT: 10,
         DEFAULT_KEYWORD_SEARCH_LIMIT: 10,
         DEFAULT_PROMOTED_LIMIT: 5,
-        DEFAULT_SEARCH_OFFSET: 0
+        DEFAULT_SEARCH_OFFSET: 0,
+        VOTES_QUOTA_HOURS: 6
     }
 }

@@ -21,22 +21,6 @@ router.post('/approve/:id', ApiMiddleware.is_user_admin, async (request, respons
     }
 });
 
-router.post('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
-    try {
-        return response.json(await new ApiCoinsController(request, response, next).vote());
-    } catch (e) {
-        next(e);
-    }
-});
-
-router.delete('/vote/:id', ApiMiddleware.is_user_ordinary, async (request, response, next) => {
-    try {
-        return response.json(await new ApiCoinsController(request, response, next).remove_vote());
-    } catch (e) {
-        next(e);
-    }
-})
-
 router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).search());
@@ -56,14 +40,6 @@ router.get('/keywordSearch', async (request, response, next) => {
 router.get('/unapprovedCount', ApiMiddleware.is_user_admin, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).get_upapproved_count());
-    } catch (e) {
-        next(e);
-    }
-});
-
-router.get('/promoted', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
-    try {
-        return response.json(await new ApiCoinsController(request, response, next).get_promoted())
     } catch (e) {
         next(e);
     }

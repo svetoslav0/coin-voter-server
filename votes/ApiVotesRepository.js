@@ -6,28 +6,88 @@ class ApiVotesRepository extends ApiRepository {
      * @param coin_id
      * @returns {Promise<void>}
      */
-    async get_vote(user_id, coin_id) {
+    async get_last_vote(user_id, coin_id) {
         const query = `
             SELECT
+                id,
                 user_id,
-                coin_id
+                coin_id,
+                time_voted
             FROM
                 coin_votes
             WHERE
                 user_id = ?
                     AND
                 coin_id = ?
+            ORDER BY
+                time_voted
+            DESC
         `;
 
         const vote = await this._query(query, [user_id, coin_id]);
 
-        if (vote.length == 1) {
+        if (vote.length >= 1) {
             return vote[0];
         }
 
         return null;
     }
 
+    /**
+     * @param coin_ids
+     * @param user_id
+     * @returns {Promise<*>}
+     */
+    async get_latest_votes_for_user(coin_ids, user_id) {
+        const query = `
+            SELECT 
+                user_id,
+                coin_id,
+                MAX(time_voted) AS latest_vote
+            FROM
+                coin_votes
+            WHERE
+                coin_id IN (?)
+                    AND
+                user_id = ?
+            GROUP BY 
+                user_id,
+                coin_id;
+        `;
+
+        const parameters = [
+            coin_ids,
+            user_id
+        ];
+
+        return await this._query(query, parameters);
+    }
+
+    /**
+     * @param coin_ids
+     * @returns {Promise<*>}
+     */
+    async get_total_votes_for_coin_ids(coin_ids) {
+        const query = `
+            SELECT 
+                coin_id,
+                COUNT(user_id) AS total_votes
+            FROM
+                coin_votes
+            WHERE
+                coin_id IN (?)
+            GROUP BY
+                coin_id
+        `;
+
+        const parameters = [coin_ids];
+        return await this._query(query, parameters);
+    }
+
+    /**
+     * @param coin_id
+     * @returns {Promise<*|number>}
+     */
     async get_votes_for_coin(coin_id) {
         const query = `
             SELECT
@@ -68,21 +128,18 @@ class ApiVotesRepository extends ApiRepository {
     }
 
     /**
-     * @param user_id
-     * @param coin_id
+     * @param id
      * @returns {Promise<void>}
      */
-    async remove(user_id, coin_id) {
+    async remove(id) {
         const query = `
             DELETE FROM
                 coin_votes
             WHERE
-                user_id = ?
-                    AND
-                coin_id = ?
+                id = ?
         `;
 
-        await this._query(query, [user_id, coin_id]);
+        await this._query(query, [id]);
     }
 }
 

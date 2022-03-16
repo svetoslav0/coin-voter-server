@@ -9,9 +9,13 @@ const ERRORS = {
         status: 404,
         message: 'Coin with ID {ID} does not exist'
     },
+    INVALID_COIN_ORDER_VALUE: {
+        status: 400,
+        message: 'Invalid order value, must be one these: {ORDER_LIST}'
+    },
     INVALID_COIN_ORDER: {
         status: 400,
-        message: 'Invalid order, must be one these: {ORDER_LIST}'
+        message: 'Invalid order, must be either "ASC" or "DESC"'
     },
     NON_EXISTING_COIN_VOTE: {
         status: 400,
