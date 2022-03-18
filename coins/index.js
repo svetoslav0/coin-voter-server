@@ -29,7 +29,7 @@ router.get('/', ApiMiddleware.try_to_authorize_user, async (request, response, n
     }
 });
 
-router.get('/keywordSearch', async (request, response, next) => {
+router.get('/keywordSearch', ApiMiddleware.try_to_authorize_user, async (request, response, next) => {
     try {
         return response.json(await new ApiCoinsController(request, response, next).keyword_search());
     } catch (e) {

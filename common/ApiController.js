@@ -1,3 +1,4 @@
+import { ApiError } from './ApiError.js';
 import { ApiCoinsError } from '../coins/ApiCoinsError.js';
 
 const MILLISECONDS_TO_HOURS_COEFFICIENT = 36e5;
@@ -49,6 +50,20 @@ export class ApiController {
         }
 
         return !!value;
+    }
+
+    /**
+     * @param value
+     * @param {string} field_name
+     * @returns {void}
+     * @protected
+     */
+    _validate_boolean_param(value, field_name) {
+        const normalized_value = value?.toString().trim().toLowerCase();
+
+        if (normalized_value && normalized_value !== 'true' && normalized_value !== 'false') {
+            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: field_name });
+        }
     }
 
     /**

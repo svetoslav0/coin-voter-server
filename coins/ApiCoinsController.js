@@ -38,7 +38,7 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<{coins: *}>}
      */
     async search() {
-        await this._validate_get_coins_params();
+        await this._validate_search_coins_params();
 
         let coins;
         if (this._is_used_logged()) {
@@ -113,11 +113,40 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<{coins: *}>}
      */
     async keyword_search() {
-        this._validate_keyword_param();
-        const { keyword } = this._query;
+        this._validate_keyword_params();
 
-        const coins = await this._repository.coins.search_by_keyword(keyword);
-        return { coins };
+        switch (this._request.role_id) {
+            case CONSTANTS.USER_ROLES.ADMIN_ROLE_ID: {
+                const filter = {
+                    keyword: this._query.keyword
+                };
+
+                return {
+                    coins: await this._repository
+                        .coins
+                        .common_search_by_keyword(filter)
+                }
+            }
+            case CONSTANTS.USER_ROLES.USER_ROLE_ID: {
+                return {
+                    coins: await this._repository
+                        .coins
+                        .client_user_search_by_keyword(
+                            this._request.user_id,
+                            this._query.keyword
+                        )
+                }
+            }
+            default: {
+                const filter = {
+                    keyword: this._query.keyword,
+                    is_approved: true
+                };
+                return {
+                    coins: await this._repository.coins.common_search_by_keyword(filter)
+                }
+            }
+        }
     }
 
     /**
@@ -218,9 +247,9 @@ export class ApiCoinsController extends ApiController {
      * @returns {Promise<void>}
      * @private
      */
-    async _validate_get_coins_params() {
+    async _validate_search_coins_params() {
         this._set_default_search_values();
-        const { order, approved, is_presale, date_added, is_promoted, category } = this._query;
+        const { order, is_approved, is_presale, date_added, is_promoted, category } = this._query;
         const [order_value, order_turn] = order.split(':');
 
         this._validate_limit_and_offset_params();
@@ -240,20 +269,9 @@ export class ApiCoinsController extends ApiController {
             this._query.descending_order = true;
         }
 
-        const approved_value = approved?.toString().trim().toLowerCase();
-        if (approved_value && approved_value !== 'true' && approved_value !== 'false') {
-            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'approved' });
-        }
-
-        const is_presale_value = is_presale?.toString().trim().toLowerCase();
-        if (is_presale_value && is_presale_value !== 'true' && is_presale_value !== 'false') {
-            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'is_presale' });
-        }
-
-        const is_promoted_value = is_promoted?.toString().trim().toLowerCase();
-        if (is_promoted_value && is_promoted_value !== 'true' && is_promoted_value !== 'false') {
-            throw new ApiError(ApiError.ERRORS.INVALID_BOOLEAN_PARAM, { FIELD: 'is_promoted' });
-        }
+        this._validate_boolean_param(is_approved, 'is_approved');
+        this._validate_boolean_param(is_presale, 'is_presale');
+        this._validate_boolean_param(is_promoted, 'is_promoted');
 
         if (date_added) {
             if (!moment(date_added, 'YYYY-MM-DD', true).isValid()) {
@@ -296,12 +314,14 @@ export class ApiCoinsController extends ApiController {
     /**
      * @private
      */
-    _validate_keyword_param() {
-        const { keyword } = this._query;
+    _validate_keyword_params() {
+        const { keyword, is_approved } = this._query;
 
         if (!keyword) {
             throw new ApiError(ApiError.ERRORS.FIELD_IS_REQUIRED, { FIELD: 'keyword' });
         }
+
+        this._validate_boolean_param(is_approved, 'is_approved');
     }
 
     /**

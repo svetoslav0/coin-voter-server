@@ -390,11 +390,57 @@ class ApiCoinsRepository extends ApiRepository {
     }
 
     /**
-     * @param {string} keyword
+     * @param filter
      * @param {number} limit
      * @returns {Promise<*>}
      */
-    async search_by_keyword(keyword, limit = CONSTANTS.RESTRICTIONS.DEFAULT_KEYWORD_SEARCH_LIMIT) {
+    async common_search_by_keyword(filter, limit = CONSTANTS.RESTRICTIONS.DEFAULT_KEYWORD_SEARCH_LIMIT) {
+        const keyword = `%${filter.keyword}%`;
+
+        const query = `
+            SELECT
+                id,
+                name,
+                symbol,
+                logo_url,
+                contract_address
+            FROM
+                coins
+            WHERE
+                (
+                    name LIKE ? OR
+                    symbol LIKE ? OR
+                    contract_address LIKE ?
+                )
+                AND 1 = 1
+                ${
+                    filter.is_approved
+                    ? ' AND is_approved = ?'
+                    : ''
+                }
+            LIMIT ?
+        `;
+
+        const params = [];
+        params.push(keyword);
+        params.push(keyword);
+        params.push(keyword);
+        if (filter.is_approved) {
+            params.push(filter.is_approved ? 1 : 0);
+        }
+
+        params.push(limit);
+
+        return await this._query(query, params);
+    }
+
+    /**
+     * @param user_id
+     * @param keyword
+     * @param limit
+     * @returns {Promise<*>}
+     */
+    async client_user_search_by_keyword(user_id, keyword, limit = CONSTANTS.RESTRICTIONS.DEFAULT_KEYWORD_SEARCH_LIMIT) {
         keyword = `%${keyword}%`;
 
         const query = `
@@ -407,15 +453,27 @@ class ApiCoinsRepository extends ApiRepository {
             FROM
                 coins
             WHERE
-                name LIKE ? OR
-                symbol LIKE ? OR
-                contract_address LIKE ?
+                (
+                    name LIKE ? OR
+                    symbol LIKE ? OR
+                    contract_address LIKE ?
+                )
+                AND
+                (
+                    is_approved = 1 OR
+                    owner = ?
+                )
             LIMIT ?
         `;
 
-        const parameters = [keyword, keyword, keyword, limit];
+        const params = [];
+        params.push(keyword);
+        params.push(keyword);
+        params.push(keyword);
+        params.push(user_id);
+        params.push(limit);
 
-        return this._query(query, parameters);
+        return await this._query(query, params);
     }
 
     /**
