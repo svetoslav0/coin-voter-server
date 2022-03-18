@@ -40,20 +40,16 @@ export class ApiCoinsController extends ApiController {
     async search() {
         await this._validate_get_coins_params();
 
-        // todo: can be in other method
-        const { limit, offset, order, approved, is_presale, date_added, is_promoted, category } = this._query;
-
         let coins;
         if (this._is_used_logged()) {
-            // todo: better pass 'filter' object
-            coins = await this._repository.coins.search_coins_for_logged_user(this._request.user_id, limit, offset, order, date_added, approved, is_presale, is_promoted, category, this._query.descending_order);
+            coins = await this._repository.coins.search_coins_for_logged_user(this._request.user_id, this._query, this._query.descending_order);
             coins = await this._attach_votes_for_user(coins);
             coins = await this._attach_total_votes(coins);
         } else {
-            coins = await this._repository.coins.search_coins_for_no_user(limit, offset, order, date_added, approved, is_presale, is_promoted, category, this._query.descending_order);
+            coins = await this._repository.coins.search_coins_for_no_user(this._query, this._query.descending_order);
         }
 
-        const total = await this._repository.coins.get_total_from_search(approved, date_added);
+        const total = await this._repository.coins.get_total_from_search(this._query);
 
         return {
             total,

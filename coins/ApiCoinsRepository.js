@@ -161,19 +161,12 @@ class ApiCoinsRepository extends ApiRepository {
     }
 
     /**
-     * @param user_id
-     * @param limit
-     * @param offset
-     * @param order
-     * @param date_added
-     * @param is_approved
-     * @param is_presale
-     * @param is_promoted
-     * @param category
-     * @param ascending_order
+     * @param {number} user_id
+     * @param {ApiSearchFilter} filter
+     * @param {boolean} ascending_order
      * @returns {Promise<*>}
      */
-    async search_coins_for_logged_user(user_id, limit, offset, order, date_added, is_approved, is_presale, is_promoted, category, ascending_order = false) {
+    async search_coins_for_logged_user(user_id, filter, ascending_order = false) {
         const query = `
             SELECT 
                 nested.id,
@@ -239,19 +232,19 @@ class ApiCoinsRepository extends ApiRepository {
             LEFT JOIN promoted_coins AS p ON nested.id = p.coin_id
             WHERE
                 1 = 1
-                ${is_approved
+                ${filter.is_approved
                     ? ' AND nested.is_approved = ?'
                     : ''
                 }
-                ${is_presale
+                ${filter.is_presale
                     ? ' AND nested.is_presale = ?'
                     : ''
                 }
-                ${date_added
+                ${filter.date_added
                         ? ' AND DATE(nested.date_added) = ?'
                         : ''
                 }
-                ${category
+                ${filter.category
                         ? ' AND category = ?'
                         : ''
                 }
@@ -267,58 +260,29 @@ class ApiCoinsRepository extends ApiRepository {
                 nested.price
             HAVING
                 1 = 1
-                ${is_promoted
+                ${filter.is_promoted
                         ? ' AND is_promoted = ?'
                         : ''
                 }
             ORDER BY
-                ${order} ${ascending_order ? 'ASC' : 'DESC'}
+                ${filter.order} ${ascending_order ? 'ASC' : 'DESC'}
             LIMIT ?, ?
         `;
 
-        const parameters = [];
+        let parameters = [];
         parameters.push(user_id);
         parameters.push(user_id);
-
-        if (is_approved) {
-            parameters.push(is_approved === 'true' ? 1 : 0);
-        }
-
-        if (is_presale) {
-            parameters.push(is_presale === 'true' ? 1 : 0);
-        }
-
-        if (date_added) {
-            parameters.push(date_added);
-        }
-
-        if (category) {
-            parameters.push(category);
-        }
-
-        if (is_promoted) {
-            parameters.push(is_promoted === 'true' ? 1 : 0);
-        }
-
-        parameters.push(+offset);
-        parameters.push(+limit);
+        parameters = parameters.concat(this._build_search_parameters(filter));
 
         return this._query(query, parameters);
     }
 
     /**
-     * @param limit
-     * @param offset
-     * @param order
-     * @param date_added
-     * @param is_approved
-     * @param is_presale
-     * @param is_promoted
-     * @param category
+     * @param {ApiSearchFilter} filter
      * @param ascending_order
      * @returns {Promise<*>}
      */
-    async search_coins_for_no_user(limit, offset, order, date_added, is_approved, is_presale, is_promoted, category, ascending_order = false) {
+    async search_coins_for_no_user(filter, ascending_order = false) {
         const query = `
             SELECT
                 c.id,
@@ -350,19 +314,19 @@ class ApiCoinsRepository extends ApiRepository {
                 c.id = p.coin_id
             WHERE
                 1 = 1
-                ${is_approved
+                ${filter.is_approved
                     ? ' AND c.is_approved = ?'
                     : ''
                 }
-                ${is_presale
+                ${filter.is_presale
                     ? ' AND c.is_presale = ?'
                     : ''
                 }
-                ${date_added
+                ${filter.date_added
                     ? ' AND DATE(c.date_added) = ?'
                     : ''
                 }
-                ${category
+                ${filter.category
                     ? ' AND category = ?'
                     : ''
                 }
@@ -379,119 +343,50 @@ class ApiCoinsRepository extends ApiRepository {
                 is_promoted
             HAVING
                 1 = 1
-                ${is_promoted
+                ${filter.is_promoted
                         ? ' AND is_promoted = ?'
                         : ''
                 }
             ORDER BY
-                ${order} ${ascending_order ? 'ASC' : 'DESC'}
+                ${filter.order} ${ascending_order ? 'ASC' : 'DESC'}
             LIMIT ?, ?
         `;
 
-        const parameters = [];
-
-        if (is_approved) {
-            parameters.push(is_approved === 'true' ? 1 : 0);
-        }
-
-        if (is_presale) {
-            parameters.push(is_presale === 'true' ? 1 : 0);
-        }
-
-        if (date_added) {
-            parameters.push(date_added);
-        }
-
-        if (category) {
-            parameters.push(category);
-        }
-
-        if (is_promoted) {
-            parameters.push(is_promoted === 'true' ? 1 : 0);
-        }
-
-        parameters.push(+offset);
-        parameters.push(+limit);
-
-        return this._query(query, parameters);
+        return this._query(query, this._build_search_parameters(filter));
     }
 
     /**
-     * @param limit
-     * @param offset
-     * @param approved
-     * @param order
-     * @param date_added
-     * @param ascending_order
-     * @returns {Promise<*>}
+     * @param {ApiSearchFilter} filter
+     * @returns {*[]}
+     * @private
      */
-    async search_coins(limit, offset, approved, order, date_added, ascending_order = false) {
-        const query = `
-            SELECT
-                n.id,
-                n.name,
-                n.symbol,
-                n.launch_date,
-                n.is_approved,
-                n.date_added,
-                n.logo_url,
-                n.is_presale,
-                FORMAT(n.price, 16) AS price,
-                COUNT(n.coin_id) AS votes
-            FROM (
-                SELECT
-                    c.id,
-                    c.name,
-                    c.symbol,
-                    c.launch_date,
-                    c.is_approved,
-                    c.date_added,
-                    c.logo_url,
-                    c.is_presale,
-                    c.price,
-                    v.coin_id
-                FROM
-                    coins AS c
-                LEFT JOIN
-                    coin_votes AS v
-                ON
-                    c.id = v.coin_id
-                ${approved !== undefined
-                    ? approved === 'true'
-                        ? 'WHERE c.is_approved = 1'
-                        : 'WHERE c.is_approved = 0'
-                    : ''}
-                ${approved !== undefined && date_added
-                    ? ' AND DATE(c.date_added) = ?'
-                    : '' }
-                ${approved === undefined && date_added
-                    ? ' WHERE DATE(c.date_added) = ?'
-                    : '' }
-            ) AS n
-            GROUP BY
-                n.id,
-                n.name,
-                n.symbol,
-                n.launch_date,
-                n.is_approved,
-                n.logo_url,
-                n.is_presale,
-                n.price,
-                n.date_added
-            ORDER BY
-                ${order} ${ascending_order ? 'ASC' : 'DESC'}
-            LIMIT ?, ?
-        `;
-
+    _build_search_parameters(filter) {
         const parameters = [];
-        if (date_added) {
-            parameters.push(date_added);
+
+        if (filter.is_approved) {
+            parameters.push(filter.is_approved === 'true' ? 1 : 0);
         }
 
-        parameters.push(+offset);
-        parameters.push(+limit);
+        if (filter.is_presale) {
+            parameters.push(filter.is_presale === 'true' ? 1 : 0);
+        }
 
-        return this._query(query, parameters);
+        if (filter.date_added) {
+            parameters.push(filter.date_added);
+        }
+
+        if (filter.category) {
+            parameters.push(filter.category);
+        }
+
+        if (filter.is_promoted) {
+            parameters.push(filter.is_promoted === 'true' ? 1 : 0);
+        }
+
+        parameters.push(+filter.offset);
+        parameters.push(+filter.limit);
+
+        return parameters;
     }
 
     /**
@@ -524,36 +419,70 @@ class ApiCoinsRepository extends ApiRepository {
     }
 
     /**
-     * @param approved
-     * @param date_added
+     * @param {ApiSearchFilter} filter
      * @returns {Promise<number>}
      */
-    async get_total_from_search(approved, date_added) {
+    async get_total_from_search(filter) {
         const query = `
             SELECT
-                COUNT(*) AS total
+                COUNT(c.id) AS total
             FROM
-                coins
-            ${approved !== undefined
-                ? approved === 'true'
-                        ? 'WHERE is_approved = 1'
-                        : 'WHERE is_approved = 0'
-                : ''}
-            ${approved !== undefined && date_added
-                ? ' AND DATE(date_added) = ?'
-                : '' }
-            ${approved === undefined && date_added
-                ? ' WHERE DATE(date_added) = ?'
-                : '' }
+                coins AS c
+            LEFT JOIN
+                promoted_coins AS p
+                    ON c.id = p.coin_id
+            WHERE
+                1 = 1
+                ${
+                    filter.date_added
+                    ? ' AND DATE(c.date_added) = ?'
+                    : ''
+                }
+                ${
+                    filter.is_approved
+                    ? ' AND c.is_approved = ?'
+                    : ''
+                }
+                ${
+                    filter.is_presale
+                    ? ' AND c.is_presale = ?'
+                    : ''
+                }
+                ${
+                    filter.is_promoted
+                    ? 
+                        filter.is_promoted === 'true'
+                        ? ' AND p.date_promoted IS NOT NULL'
+                        : ' AND p.date_promoted IS NULL'
+                    : ''
+                }
+                ${
+                    filter.category
+                    ? ' AND c.category = ?'
+                    : ''
+                }
         `;
 
         const params = [];
-        if (date_added) {
-            params.push(date_added);
+        if (filter.date_added) {
+            params.push(filter.date_added);
+        }
+
+        if (filter.is_approved) {
+            params.push(filter.is_approved === 'true' ? 1 : 0);
+        }
+
+        if (filter.is_presale) {
+            params.push(filter.is_presale === 'true' ? 1 : 0);
+        }
+
+        if (filter.category) {
+            params.push(filter.category);
         }
 
         const result = await this._query(query, params);
-        if (result.length) {
+
+        if (result.length == 1) {
             return result[0].total;
         }
 
@@ -561,105 +490,9 @@ class ApiCoinsRepository extends ApiRepository {
     }
 
     /**
-     * @param {number} limit
-     * @param {number} offset
-     * @returns {Promise<Array>}
+     * @deprecated Use search methods instead
+     * @returns {Promise<null|*>}
      */
-    async get_promoted_only(limit , offset) {
-        const query = `
-            SELECT
-                n.id,
-                n.name,
-                n.symbol,
-                n.logo_url,
-                n.is_presale,
-                n.launch_date,
-                n.date_promoted,
-                FORMAT(n.price, 16) AS price,
-                COUNT(coin_votes.user_id) AS votes
-            FROM
-                coin_votes
-            RIGHT JOIN (
-                SELECT
-                    c.id,
-                    c.name,
-                    c.symbol,
-                    c.logo_url,
-                    c.price,
-                    c.is_presale,
-                    c.launch_date,
-                    p.date_promoted
-                FROM
-                    coins AS c
-                INNER JOIN
-                    promoted_coins AS p
-                ON c.id = p.coin_id
-            ) AS n
-            ON coin_votes.coin_id = n.id
-            GROUP BY
-                n.id,
-                n.name,
-                n.symbol,
-                n.logo_url,
-                n.price,
-                n.is_presale,
-                n.launch_date,
-                n.date_promoted
-            ORDER BY
-                n.date_promoted DESC
-            LIMIT ?, ?
-        `;
-
-        const params = [+offset, +limit];
-        return this._query(query, params);
-    }
-
-    /**
-     * @returns {Promise<number>}
-     */
-    async get_total_promoted() {
-        const query = `
-            SELECT 
-                COUNT(*) AS total
-            FROM
-                coins
-            INNER JOIN 
-                promoted_coins AS p
-            ON coins.id = p.coin_id
-        `;
-
-        const result = await this._query(query);
-        if (result.length) {
-            return result[0].total;
-        }
-
-        return 0;
-    }
-
-    /**
-     * @param {number} user_id
-     * @param {Array<number>} coin_ids
-     * @returns {Promise<*>}
-     */
-    async get_upvoted_coins_for_user(user_id, coin_ids) {
-        const query = `
-            SELECT
-                c.id
-            FROM
-                coins AS c
-            INNER JOIN
-                coin_votes AS v
-            ON
-                c.id = v.coin_id
-            WHERE
-                v.user_id = ?
-                    AND
-                c.id IN(?)
-        `;
-
-        return this._query(query, [user_id, coin_ids]);
-    }
-
     async get_unapproved_count() {
         const query = `
             SELECT
