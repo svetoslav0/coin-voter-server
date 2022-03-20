@@ -38,6 +38,63 @@ class ApiCategoriesRepository extends ApiRepository {
 
         return null;
     }
+
+    /**
+     * @param category
+     * @returns {Promise<void>}
+     */
+    async add(category) {
+        const query = `
+            INSERT INTO
+                categories (name)
+            VALUES
+                (?);
+        `;
+
+        const parameters = [
+            category.name
+        ];
+
+        await this._query(query, parameters);
+    }
+
+    /**
+     * @param category
+     * @returns {Promise<void>}
+     */
+    async update(category) {
+        const query = `
+            UPDATE
+                categories
+            SET
+                name = ?
+            WHERE
+                id = ?
+        `;
+
+        const parameters = [
+            category.name,
+            category.id
+        ];
+
+        await this._query(query, parameters);
+    }
+
+    /**
+     * @param id
+     * @returns {Promise<void>}
+     */
+    async delete(id) {
+        const query = `
+            DELETE FROM
+                categories
+            WHERE
+                id = ?
+        `;
+
+        const params = [id];
+        await this._query(query, params);
+    }
 }
 
 export default ApiCategoriesRepository;

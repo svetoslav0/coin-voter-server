@@ -24,6 +24,9 @@ export class ApiController {
         this._request = request || {};
         this._response = response;
         this._next = next;
+        /**
+         * @protected
+         */
         this._query = Object.assign(request.query || {}, request.body || {});
         /**
          * @protected
