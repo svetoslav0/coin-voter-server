@@ -147,7 +147,7 @@ class ApiCoinsRepository extends ApiRepository {
      * @param status
      * @returns {Promise<void>}
      */
-    async update_status(id, status) {
+    async update_is_approved_for_coin(id, status) {
         const query = `
             UPDATE
                 coins
@@ -158,6 +158,22 @@ class ApiCoinsRepository extends ApiRepository {
         `;
 
         await this._query(query, [status, id]);
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async update_all_to_approved() {
+        const query = `
+            UPDATE 
+                coins
+            SET
+                is_approved = 1
+            WHERE
+                is_approved = 0
+        `;
+
+        await this._query(query);
     }
 
     /**

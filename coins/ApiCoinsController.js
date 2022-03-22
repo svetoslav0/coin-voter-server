@@ -29,9 +29,16 @@ export class ApiCoinsController extends ApiController {
     /**
      * @returns {Promise<void>}
      */
-    async approve() {
+    async approve_coin() {
         await this._validate_coin_id_param_and_get_coin();
-        await this._repository.coins.update_status(this._request.params.id, 1);
+        await this._repository.coins.update_is_approved_for_coin(this._request.params.id, 1);
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async approve_all() {
+        await this._repository.coins.update_all_to_approved();
     }
 
     /**

@@ -15,7 +15,15 @@ router.post('/', ApiMiddleware.is_user_ordinary, async (request, response, next)
 
 router.post('/approve/:id', ApiMiddleware.is_user_admin, async (request, response, next) => {
     try {
-        return response.json(await new ApiCoinsController(request, response, next).approve());
+        return response.json(await new ApiCoinsController(request, response, next).approve_coin());
+    } catch (e) {
+        next(e);
+    }
+});
+
+router.post('/approve', ApiMiddleware.is_user_admin, async  (request, response, next) => {
+    try {
+        return response.json(await new ApiCoinsController(request, response, next).approve_all());
     } catch (e) {
         next(e);
     }
